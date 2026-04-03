@@ -41,9 +41,14 @@ export async function searchDocuments(queryEmbedding, threshold = 0.5, limit = 1
 }
 
 export async function createSource({ filename, sourceType, fileSize, metadata = {}, externalId = null }) {
+  const payload = { filename, source_type: sourceType, file_size: fileSize, metadata };
+  if (externalId) {
+    payload.external_id = externalId;
+  }
+
   const { data, error } = await getSupabase()
     .from('sources')
-    .insert({ filename, source_type: sourceType, file_size: fileSize, metadata, external_id: externalId })
+    .insert(payload)
     .select()
     .single();
 

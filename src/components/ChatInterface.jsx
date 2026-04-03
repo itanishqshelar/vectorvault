@@ -11,8 +11,10 @@ import {
   HelpCircle,
   Mic,
   Square,
+  Radio,
 } from 'lucide-react';
 import MessageBubble from './MessageBubble';
+import LiveVoiceOrb from './LiveVoiceOrb';
 
 function useAutoResizeTextarea({ minHeight, maxHeight }) {
   const textareaRef = useRef(null);
@@ -82,12 +84,12 @@ function QuickAction({ icon, label, onClick }) {
   );
 }
 
-export default function ChatInterface() {
-  const [messages, setMessages] = useState([]);
+export default function ChatInterface({ messages = [], setMessages }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [isLiveOpen, setIsLiveOpen] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const chatRef = useRef(null);
@@ -95,6 +97,10 @@ export default function ChatInterface() {
     minHeight: 56,
     maxHeight: 150,
   });
+
+  const handleLiveSessionEnd = useCallback((liveMessages) => {
+    setMessages((prev) => [...prev, ...liveMessages]);
+  }, [setMessages]);
 
   const startRecording = async () => {
     try {
@@ -305,6 +311,24 @@ export default function ChatInterface() {
                   </button>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <button
+                      onClick={() => setIsLiveOpen(true)}
+                      disabled={loading}
+                      title="Gemini Live Voice"
+                      className="live-voice-btn"
+                      style={{
+                        width: '40px', height: '40px', borderRadius: '50%', border: 'none', padding: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        background: 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(59,130,246,0.25))',
+                        color: '#818cf8',
+                        flexShrink: 0,
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Radio style={{ width: '18px', height: '18px' }} />
+                    </button>
+                    <button
                       onClick={recording ? stopRecording : startRecording}
                       disabled={loading || transcribing}
                       title={recording ? 'Stop recording' : 'Record voice'}
@@ -432,6 +456,24 @@ export default function ChatInterface() {
                 </button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
+                    onClick={() => setIsLiveOpen(true)}
+                    disabled={loading}
+                    title="Gemini Live Voice"
+                    className="live-voice-btn"
+                    style={{
+                      width: '40px', height: '40px', borderRadius: '50%', border: 'none', padding: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      background: 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(59,130,246,0.25))',
+                      color: '#818cf8',
+                      flexShrink: 0,
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Radio style={{ width: '18px', height: '18px' }} />
+                  </button>
+                  <button
                     onClick={recording ? stopRecording : startRecording}
                     disabled={loading || transcribing}
                     title={recording ? 'Stop recording' : 'Record voice'}
@@ -468,6 +510,13 @@ export default function ChatInterface() {
           </div>
         </div>
       )}
+
+      {/* Live Voice Orb Overlay */}
+      <LiveVoiceOrb
+        isOpen={isLiveOpen}
+        onClose={() => setIsLiveOpen(false)}
+        onSessionEnd={handleLiveSessionEnd}
+      />
     </>
   );
 }

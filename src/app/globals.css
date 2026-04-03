@@ -189,3 +189,339 @@ body {
 }
 
 .subtitle-gradient { color: #e2e8f0; }
+
+/* ═══════════════════════════════════════════════════
+   Live Voice Orb Styles
+   ═══════════════════════════════════════════════════ */
+
+/* Live Voice Button shimmer effect */
+.live-voice-btn::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: conic-gradient(from 0deg, transparent, rgba(99,102,241,0.4), transparent, rgba(59,130,246,0.4), transparent);
+  border-radius: 50%;
+  animation: liveButtonSpin 3s linear infinite;
+  z-index: -1;
+}
+.live-voice-btn:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.4), rgba(59,130,246,0.4)) !important;
+  color: #a5b4fc !important;
+  transform: scale(1.08);
+  transition: all 0.2s ease;
+}
+
+@keyframes liveButtonSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Overlay */
+.live-orb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.live-orb-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.live-orb-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px;
+  z-index: 1;
+}
+
+/* Close button */
+.live-orb-close {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(38, 38, 38, 0.8);
+  border: 1px solid rgba(64, 64, 64, 0.6);
+  color: #a3a3a3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+.live-orb-close:hover {
+  background: rgba(64, 64, 64, 0.8);
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Status label */
+.live-orb-status {
+  font-size: 14px;
+  font-weight: 500;
+  color: #a3a3a3;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ══════ The Orb ══════ */
+.live-orb {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.live-orb-core {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%,
+    rgba(129, 140, 248, 0.9),
+    rgba(99, 102, 241, 0.6),
+    rgba(59, 130, 246, 0.4),
+    rgba(30, 58, 138, 0.6)
+  );
+  box-shadow:
+    0 0 40px rgba(99, 102, 241, 0.4),
+    0 0 80px rgba(99, 102, 241, 0.2),
+    inset 0 -10px 30px rgba(15, 23, 42, 0.5);
+  transition: all 0.5s ease;
+}
+
+.live-orb--connecting .live-orb-core {
+  animation: orbBreathing 1.5s ease-in-out infinite;
+}
+
+.live-orb--active .live-orb-core {
+  width: 90px;
+  height: 90px;
+  background: radial-gradient(circle at 40% 35%,
+    rgba(168, 85, 247, 0.9),
+    rgba(129, 140, 248, 0.8),
+    rgba(99, 102, 241, 0.6),
+    rgba(59, 130, 246, 0.4)
+  );
+  box-shadow:
+    0 0 50px rgba(129, 140, 248, 0.5),
+    0 0 100px rgba(99, 102, 241, 0.3),
+    0 0 150px rgba(99, 102, 241, 0.15),
+    inset 0 -10px 30px rgba(15, 23, 42, 0.4);
+  animation: orbActive 2s ease-in-out infinite;
+}
+
+/* Rings */
+.live-orb-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  transition: all 0.5s ease;
+}
+
+.live-orb-ring--1 {
+  width: 120px; height: 120px;
+  border-color: rgba(99, 102, 241, 0.15);
+}
+.live-orb-ring--2 {
+  width: 160px; height: 160px;
+  border-color: rgba(99, 102, 241, 0.08);
+}
+.live-orb-ring--3 {
+  width: 200px; height: 200px;
+  border-color: rgba(99, 102, 241, 0.04);
+}
+
+.live-orb--active .live-orb-ring--1 {
+  border-color: rgba(129, 140, 248, 0.35);
+  animation: ringPulse1 2s ease-in-out infinite;
+}
+.live-orb--active .live-orb-ring--2 {
+  border-color: rgba(129, 140, 248, 0.2);
+  animation: ringPulse2 2.5s ease-in-out infinite 0.3s;
+}
+.live-orb--active .live-orb-ring--3 {
+  border-color: rgba(129, 140, 248, 0.1);
+  animation: ringPulse3 3s ease-in-out infinite 0.6s;
+}
+
+/* Particles */
+.live-orb-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(168, 85, 247, 0.7);
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.5);
+}
+.live-orb-particle--1 { animation: particleOrbit1 3s linear infinite; }
+.live-orb-particle--2 { animation: particleOrbit2 4s linear infinite; }
+.live-orb-particle--3 { animation: particleOrbit3 3.5s linear infinite; }
+.live-orb-particle--4 { animation: particleOrbit4 2.8s linear infinite; }
+.live-orb-particle--5 { animation: particleOrbit5 3.2s linear infinite; }
+.live-orb-particle--6 { animation: particleOrbit6 4.5s linear infinite; }
+
+/* Mic indicator */
+.live-orb-mic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #737373;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(38, 38, 38, 0.5);
+  border: 1px solid rgba(64, 64, 64, 0.3);
+}
+
+/* Transcript preview */
+.live-orb-transcript {
+  width: 400px;
+  max-width: 90vw;
+  min-height: 60px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(64, 64, 64, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.live-transcript-line {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  animation: fadeIn 0.3s ease;
+}
+.live-transcript-line:last-child { margin-bottom: 0; }
+
+.live-transcript-user { color: #e2e8f0; }
+.live-transcript-ai { color: #a5b4fc; }
+.live-transcript-hint {
+  color: #525252;
+  font-style: italic;
+  text-align: center;
+}
+.live-transcript-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* End session button */
+.live-orb-end-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.live-orb-end-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fecaca;
+  transform: scale(1.03);
+}
+
+/* ══════ Keyframes ══════ */
+@keyframes orbBreathing {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes orbActive {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 50px rgba(129, 140, 248, 0.5),
+      0 0 100px rgba(99, 102, 241, 0.3),
+      0 0 150px rgba(99, 102, 241, 0.15),
+      inset 0 -10px 30px rgba(15, 23, 42, 0.4);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow:
+      0 0 60px rgba(168, 85, 247, 0.6),
+      0 0 120px rgba(129, 140, 248, 0.4),
+      0 0 180px rgba(99, 102, 241, 0.2),
+      inset 0 -10px 30px rgba(15, 23, 42, 0.3);
+  }
+}
+
+@keyframes ringPulse1 {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.5; }
+}
+
+@keyframes ringPulse2 {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.4; }
+}
+
+@keyframes ringPulse3 {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.3; }
+}
+
+@keyframes particleOrbit1 {
+  0%   { transform: rotate(0deg)   translateX(70px) rotate(0deg);   opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: rotate(360deg) translateX(70px) rotate(-360deg); opacity: 0; }
+}
+@keyframes particleOrbit2 {
+  0%   { transform: rotate(60deg)  translateX(90px) rotate(-60deg);  opacity: 0; }
+  10%  { opacity: 0.8; }
+  90%  { opacity: 0.8; }
+  100% { transform: rotate(420deg) translateX(90px) rotate(-420deg); opacity: 0; }
+}
+@keyframes particleOrbit3 {
+  0%   { transform: rotate(120deg) translateX(60px) rotate(-120deg); opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.6; }
+  100% { transform: rotate(480deg) translateX(60px) rotate(-480deg); opacity: 0; }
+}
+@keyframes particleOrbit4 {
+  0%   { transform: rotate(180deg) translateX(80px) rotate(-180deg); opacity: 0; }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.7; }
+  100% { transform: rotate(540deg) translateX(80px) rotate(-540deg); opacity: 0; }
+}
+@keyframes particleOrbit5 {
+  0%   { transform: rotate(240deg) translateX(95px) rotate(-240deg); opacity: 0; }
+  10%  { opacity: 0.5; }
+  90%  { opacity: 0.5; }
+  100% { transform: rotate(600deg) translateX(95px) rotate(-600deg); opacity: 0; }
+}
+@keyframes particleOrbit6 {
+  0%   { transform: rotate(300deg) translateX(75px) rotate(-300deg); opacity: 0; }
+  10%  { opacity: 0.9; }
+  90%  { opacity: 0.9; }
+  100% { transform: rotate(660deg) translateX(75px) rotate(-660deg); opacity: 0; }
+}
