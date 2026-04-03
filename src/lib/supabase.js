@@ -121,28 +121,6 @@ export async function updateSourceStoragePath(sourceId, storagePath) {
   if (error) throw error;
 }
 
-export async function updateSourceStatus(sourceId, status, errorMessage = null) {
-  const update = { status };
-  if (errorMessage) update.error_message = errorMessage;
-  if (status === 'ready') update.processed_at = new Date().toISOString();
-
-  const { error } = await getSupabase()
-    .from('sources')
-    .update(update)
-    .eq('id', sourceId);
-  if (error) throw error;
-}
-
-export async function getSourceStatus(sourceId) {
-  const { data, error } = await getSupabase()
-    .from('sources')
-    .select('id, status, error_message, filename')
-    .eq('id', sourceId)
-    .single();
-  if (error) throw error;
-  return data;
-}
-
 export async function downloadSourceFile(storagePath) {
   const { data, error } = await getSupabase()
     .storage

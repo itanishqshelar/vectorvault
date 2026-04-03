@@ -8,12 +8,10 @@ import { parseImage } from '@/lib/parsers/image';
 import { chunkText } from '@/lib/chunker';
 import { generateEmbeddings } from '@/lib/gemini';
 import {
-  getSourceStatus,
   downloadSourceFile,
   insertDocuments,
-  updateSourceStatus,
+  getSupabase,
 } from '@/lib/supabase';
-import { getSupabase } from '@/lib/supabase';
 
 const PARSERS = {
   pdf: parsePDF,
@@ -29,14 +27,23 @@ function getExtFromFilename(filename) {
   return filename.split('.').pop().toLowerCase();
 }
 
+async function updateMetadataStatus(sourceId, status, errorMessage = null) {
+  const update = errorMessage
+    ? { metadata: { status, error: errorMessage } }
+    : { metadata: { status } };
+  await getSupabase().from('sources').update(update).eq('id', sourceId);
+}
+
 export async function POST(request) {
+  let sourceId = null;
   try {
     const { source_id } = await request.json();
+    sourceId = source_id;
+
     if (!source_id) {
       return NextResponse.json({ error: 'source_id required' }, { status: 400 });
     }
 
-    // Get source details
     const { data: source, error: fetchError } = await getSupabase()
       .from('sources')
       .select('*')
@@ -47,27 +54,32 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Source not found' }, { status: 404 });
     }
 
-    if (source.status === 'ready') {
-      return NextResponse.json({ status: 'ready', message: 'Already processed' });
+    // Skip if already processed (has documents)
+    const { count } = await getSupabase()
+      .from('documents')
+      .select('id', { count: 'exact', head: true })
+      .eq('source_id', source_id);
+
+    if (count > 0) {
+      return NextResponse.json({ status: 'ready', chunks_count: count });
     }
 
-    await updateSourceStatus(source_id, 'processing');
+    await updateMetadataStatus(source_id, 'processing');
 
     // Download file from storage
     const buffer = await downloadSourceFile(source.storage_path);
     const ext = getExtFromFilename(source.filename);
 
-    // Parse
     const parser = PARSERS[ext];
     if (!parser) {
-      await updateSourceStatus(source_id, 'error', 'Unsupported file type');
+      await updateMetadataStatus(source_id, 'error', 'Unsupported file type');
       return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
     }
 
     const parsed = await parser(buffer, source.filename);
 
     if (!parsed.text || parsed.text.trim().length === 0) {
-      await updateSourceStatus(source_id, 'error', 'No text content extracted');
+      await updateMetadataStatus(source_id, 'error', 'No text content extracted');
       return NextResponse.json({ error: 'No text extracted' }, { status: 400 });
     }
 
@@ -89,11 +101,14 @@ export async function POST(request) {
 
     // Insert
     await insertDocuments(source_id, chunksWithEmbeddings);
-    await updateSourceStatus(source_id, 'ready');
+    await updateMetadataStatus(source_id, 'ready');
 
     return NextResponse.json({ status: 'ready', chunks_count: chunks.length });
   } catch (error) {
     console.error('Process error:', error);
+    if (sourceId) {
+      await updateMetadataStatus(sourceId, 'error', error.message).catch(() => {});
+    }
     return NextResponse.json({ error: error.message || 'Processing failed' }, { status: 500 });
   }
 }

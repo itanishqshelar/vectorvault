@@ -9,9 +9,6 @@ create table sources (
   file_size integer,
   storage_path text,
   external_id text unique,
-  status text default 'ready',
-  error_message text,
-  processed_at timestamptz,
   uploaded_at timestamptz default now(),
   metadata jsonb default '{}'
 );
@@ -22,9 +19,6 @@ create table sources (
 -- Migration for existing deployments:
 -- alter table sources add column if not exists storage_path text;
 -- alter table sources add column if not exists external_id text unique;
--- alter table sources add column if not exists status text default 'ready';
--- alter table sources add column if not exists error_message text;
--- alter table sources add column if not exists processed_at timestamptz;
 -- alter table sources drop constraint if exists sources_source_type_check;
 -- alter table sources add constraint sources_source_type_check check (source_type in ('pdf', 'excel', 'email', 'gmail', 'drive', 'image'));
 

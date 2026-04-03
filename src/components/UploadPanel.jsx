@@ -11,13 +11,33 @@ async function pollStatus(sourceId, maxAttempts = 60) {
       const res = await fetch(`/api/ingest/status/${sourceId}`);
       if (!res.ok) continue;
       const data = await res.json();
-      if (data.status === 'ready') return { success: true };
+      if (data.status === 'ready') return { success: true, chunks_count: data.chunks_count };
       if (data.status === 'error') return { success: false, error: data.error_message || 'Processing failed' };
     } catch {
       // Network hiccup, keep polling
     }
   }
   return { success: false, error: 'Processing timed out' };
+}
+
+async function triggerProcess(sourceId) {
+  try {
+    const res = await fetch('/api/ingest/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source_id: sourceId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status === 'ready') return { success: true, chunks_count: data.chunks_count };
+    }
+    // If the process endpoint itself timed out or failed, fall through to polling
+    return null;
+  } catch {
+    // Fetch threw — likely a network timeout. The processing may still be
+    // running on the server. Fall through to polling.
+    return null;
+  }
 }
 
 export default function UploadPanel({ onClose, onUploadComplete }) {
@@ -29,33 +49,25 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
     setFiles((prev) => prev.map((f) => (f.name === name ? { ...f, ...updates } : f)));
   };
 
-  const retryProcess = async (fileEntry) => {
-    updateFile(fileEntry.name, { status: 'processing', result: 'Retrying...' });
-    try {
-      const res = await fetch('/api/ingest/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source_id: fileEntry.sourceId }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.status === 'ready') {
-          updateFile(fileEntry.name, { status: 'done', result: `${data.chunks_count} chunks` });
-          onUploadComplete();
-          return;
-        }
-      }
-    } catch {
-      // Retry endpoint itself may timeout, fall through to polling
+  const processFile = async (name, sourceId) => {
+    updateFile(name, { status: 'processing', result: 'Processing...', sourceId });
+
+    // Step 1: Call process endpoint (gets its own 60s timeout)
+    const processResult = await triggerProcess(sourceId);
+    if (processResult?.success) {
+      updateFile(name, { status: 'done', result: `${processResult.chunks_count} chunks` });
+      return true;
     }
-    // Poll for status
-    const result = await pollStatus(fileEntry.sourceId);
-    if (result.success) {
-      updateFile(fileEntry.name, { status: 'done', result: 'Processed' });
-    } else {
-      updateFile(fileEntry.name, { status: 'error', result: result.error });
+
+    // Step 2: Process might still be running — poll for completion
+    const pollResult = await pollStatus(sourceId);
+    if (pollResult.success) {
+      updateFile(name, { status: 'done', result: `${pollResult.chunks_count || ''} Ingested`.trim() });
+      return true;
     }
-    onUploadComplete();
+
+    updateFile(name, { status: 'error', result: pollResult.error, sourceId });
+    return false;
   };
 
   const handleFiles = async (fileList) => {
@@ -73,7 +85,7 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
       updateFile(fileEntry.name, { status: 'uploading', result: 'Uploading...' });
 
       try {
-        // Step 1: Upload file (fast — just stores file and creates source record)
+        // Step 1: Upload file to storage (fast — no parsing/embedding)
         const formData = new FormData();
         formData.append('file', fileEntry.file);
 
@@ -88,23 +100,9 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
         if (!res.ok) throw new Error(data.error || 'Upload failed');
 
         fileEntry.sourceId = data.source_id;
-        updateFile(fileEntry.name, {
-          status: 'processing',
-          result: 'Processing...',
-          sourceId: data.source_id,
-        });
 
-        // Step 2: Poll for processing completion (background processing via after())
-        const result = await pollStatus(data.source_id);
-        if (result.success) {
-          updateFile(fileEntry.name, { status: 'done', result: 'Ingested' });
-        } else {
-          updateFile(fileEntry.name, {
-            status: 'error',
-            result: result.error,
-            sourceId: data.source_id,
-          });
-        }
+        // Step 2: Trigger processing (separate request = separate 60s timeout)
+        await processFile(fileEntry.name, data.source_id);
       } catch (err) {
         updateFile(fileEntry.name, { status: 'error', result: err.message });
       }
@@ -209,7 +207,7 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            retryProcess(f);
+                            processFile(f.name, f.sourceId);
                           }}
                           className="ml-1 p-0.5 rounded hover:bg-neutral-700 transition-colors cursor-pointer"
                           title="Retry processing"
