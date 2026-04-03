@@ -5,13 +5,16 @@ import { PanelLeftClose, PanelLeft, Upload, RefreshCw } from 'lucide-react';
 
 export default function Header({ onUploadClick, onSyncClick, toggleSidebar, isSidebarCollapsed }) {
   return (
-    <header className="flex items-center justify-between px-6 py-3.5 bg-neutral-900/60 backdrop-blur-xl border-b border-neutral-800">
+    <header
+      className="flex items-center justify-between px-6 py-3.5 bg-neutral-900/60 backdrop-blur-xl"
+      style={{ borderBottom: '1px solid #262626' }}
+    >
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="text-neutral-400 hover:text-white hover:bg-neutral-800"
+          className="text-neutral-400 hover:text-white hover:bg-neutral-800 border-none"
           title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isSidebarCollapsed ? (
@@ -24,22 +27,26 @@ export default function Header({ onUploadClick, onSyncClick, toggleSidebar, isSi
           Chat with your documents
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Button
+      <div className="flex items-center gap-2 shrink-0">
+        <button
           onClick={onSyncClick}
-          variant="ghost"
-          className="text-neutral-400 hover:text-white hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-600"
+          className="inline-flex items-center gap-2 shrink-0 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+          style={{ border: '1px solid #404040' }}
         >
           <RefreshCw className="w-4 h-4 shrink-0" />
           <span>Sync Google</span>
-        </Button>
-        <Button
+        </button>
+        <button
           onClick={onUploadClick}
-          className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-0.5"
+          className="inline-flex items-center gap-2 shrink-0 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-white transition-all hover:-translate-y-0.5 border-none"
+          style={{
+            background: 'linear-gradient(to right, #2563eb, #3b82f6)',
+            boxShadow: '0 10px 15px -3px rgba(37,99,235,0.25)',
+          }}
         >
           <Upload className="w-4 h-4 shrink-0" />
           <span>Upload Document</span>
-        </Button>
+        </button>
       </div>
     </header>
   );

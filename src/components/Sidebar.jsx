@@ -34,14 +34,21 @@ export default function Sidebar({ sources, onDeleteSource, isCollapsed }) {
   return (
     <aside
       className={cn(
-        'flex flex-col flex-shrink-0 bg-neutral-900/80 backdrop-blur-xl border-r border-neutral-800 transition-all duration-300 overflow-hidden',
-        isCollapsed ? 'w-0 opacity-0 border-r-0' : 'w-[280px]'
+        'flex flex-col flex-shrink-0 bg-neutral-900/80 backdrop-blur-xl transition-all duration-300 overflow-hidden',
+        isCollapsed ? 'w-0 opacity-0' : 'w-[280px]'
       )}
+      style={{ borderRight: isCollapsed ? 'none' : '1px solid #262626' }}
     >
       {/* Brand */}
-      <div className="p-5 border-b border-neutral-800">
+      <div className="p-5" style={{ borderBottom: '1px solid #262626' }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-500/25">
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+            style={{
+              background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+              boxShadow: '0 10px 15px -3px rgba(37,99,235,0.25)',
+            }}
+          >
             V
           </div>
           <div>
@@ -56,15 +63,21 @@ export default function Sidebar({ sources, onDeleteSource, isCollapsed }) {
       </div>
 
       {/* Stats */}
-      <div className="flex gap-3 p-4 border-b border-neutral-800">
-        <div className="flex-1 bg-neutral-800/60 border border-neutral-700/50 rounded-lg p-3 text-center">
-          <div className="font-[family-name:var(--font-display)] text-xl font-bold text-indigo-400">
+      <div className="flex gap-3 p-4" style={{ borderBottom: '1px solid #262626' }}>
+        <div
+          className="flex-1 bg-neutral-800/60 rounded-lg p-3 text-center"
+          style={{ border: '1px solid rgba(64,64,64,0.5)' }}
+        >
+          <div className="font-[family-name:var(--font-display)] text-xl font-bold text-blue-400">
             {sources.length}
           </div>
           <div className="text-[10px] text-neutral-500 uppercase tracking-wider">Documents</div>
         </div>
-        <div className="flex-1 bg-neutral-800/60 border border-neutral-700/50 rounded-lg p-3 text-center">
-          <div className="font-[family-name:var(--font-display)] text-xl font-bold text-indigo-400">
+        <div
+          className="flex-1 bg-neutral-800/60 rounded-lg p-3 text-center"
+          style={{ border: '1px solid rgba(64,64,64,0.5)' }}
+        >
+          <div className="font-[family-name:var(--font-display)] text-xl font-bold text-blue-400">
             {totalChunks}
           </div>
           <div className="text-[10px] text-neutral-500 uppercase tracking-wider">Chunks</div>
@@ -105,7 +118,8 @@ export default function Sidebar({ sources, onDeleteSource, isCollapsed }) {
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-all">
                   <button
-                    className="p-1.5 rounded-md text-neutral-500 hover:text-indigo-400 hover:bg-indigo-400/10 transition-colors disabled:opacity-50"
+                    className="p-1.5 rounded-md text-neutral-500 hover:text-blue-400 hover:bg-blue-400/10 transition-colors disabled:opacity-50 cursor-pointer"
+                    style={{ border: 'none', background: 'none' }}
                     onClick={() => handleView(source.id)}
                     disabled={loadingView === source.id}
                     title="View document"
@@ -113,7 +127,8 @@ export default function Sidebar({ sources, onDeleteSource, isCollapsed }) {
                     <Eye className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    className="p-1.5 rounded-md text-neutral-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                    className="p-1.5 rounded-md text-neutral-500 hover:text-red-400 hover:bg-red-400/10 transition-colors cursor-pointer"
+                    style={{ border: 'none', background: 'none' }}
                     onClick={() => onDeleteSource(source.id)}
                     title="Delete source"
                   >

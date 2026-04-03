@@ -1,9 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import {
   ArrowUpIcon,
   Paperclip,
@@ -12,6 +9,8 @@ import {
   MessageSquare,
   Zap,
   HelpCircle,
+  Mic,
+  Square,
 } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 
@@ -59,14 +58,27 @@ function tryParseJSON(text) {
 
 function QuickAction({ icon, label, onClick }) {
   return (
-    <Button
-      variant="outline"
+    <button
       onClick={onClick}
-      className="flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-950/40 backdrop-blur-md text-blue-50 hover:text-white hover:bg-blue-900/60 hover:border-blue-400/40 transition-all duration-300 px-5 py-5"
+      className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-medium text-blue-50 hover:text-white transition-all duration-300 cursor-pointer whitespace-nowrap"
+      style={{
+        background: 'rgba(23, 37, 84, 0.4)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(59, 130, 246, 0.2)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'rgba(30, 58, 138, 0.6)';
+        e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.4)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'rgba(23, 37, 84, 0.4)';
+        e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+      }}
     >
       {icon}
-      <span className="text-[13px] font-medium">{label}</span>
-    </Button>
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -74,11 +86,55 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const chatRef = useRef(null);
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 56,
     maxHeight: 150,
   });
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setTranscribing(true);
+        try {
+          const form = new FormData();
+          form.append('audio', blob, 'recording.webm');
+          const res = await fetch('/api/transcribe', { method: 'POST', body: form });
+          const data = await res.json();
+          if (data.text) {
+            setInput((prev) => (prev ? prev + ' ' + data.text : data.text));
+            setTimeout(() => adjustHeight(), 0);
+          }
+        } catch {
+          // transcription failed silently
+        } finally {
+          setTranscribing(false);
+        }
+      };
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setRecording(true);
+    } catch {
+      // mic permission denied
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setRecording(false);
+  };
 
   useEffect(() => {
     if (chatRef.current) {
@@ -189,10 +245,10 @@ export default function ChatInterface() {
       {/* Chat area */}
       <div
         ref={chatRef}
-        className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-4"
+        className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-4 min-h-0"
       >
         {!hasMessages ? (
-          /* Empty state - RuixenMoonChat inspired with semi-sphere */
+          /* Empty state */
           <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
             
             {/* Star field particles */}
@@ -225,7 +281,7 @@ export default function ChatInterface() {
             {/* Input box - glassmorphic */}
             <div className="w-full max-w-3xl relative z-10">
               <div className="relative glass-input rounded-2xl">
-                <Textarea
+                <textarea
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => {
@@ -234,36 +290,52 @@ export default function ChatInterface() {
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask a question about your documents..."
-                  className={cn(
-                    'w-full px-5 py-4 resize-none border-none',
-                    'bg-transparent text-white text-base',
-                    'focus-visible:ring-0 focus-visible:ring-offset-0',
-                    'placeholder:text-neutral-500 min-h-[56px] pt-5'
-                  )}
-                  style={{ overflow: 'hidden' }}
                   disabled={loading}
+                  className="w-full px-5 py-4 resize-none bg-transparent text-white text-base min-h-[56px] pt-5 placeholder:text-neutral-500"
+                  style={{
+                    overflow: 'hidden',
+                    border: 'none',
+                    outline: 'none',
+                    boxShadow: 'none',
+                  }}
                 />
-                <div className="flex items-center justify-between px-4 pb-3 mt-auto">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-neutral-500 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors"
-                  >
-                    <Paperclip className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!input.trim() || loading}
-                    className={cn(
-                      'rounded-full w-10 h-10 p-0 flex items-center justify-center transition-all duration-200',
-                      input.trim()
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 hover:shadow-indigo-500/40'
-                        : 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                    )}
-                  >
-                    <ArrowUpIcon className="w-5 h-5" />
-                    <span className="sr-only">Send</span>
-                  </Button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 12px' }}>
+                  <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#737373', padding: '8px', borderRadius: '6px', display: 'flex' }}>
+                    <Paperclip style={{ width: '20px', height: '20px' }} />
+                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      onClick={recording ? stopRecording : startRecording}
+                      disabled={loading || transcribing}
+                      title={recording ? 'Stop recording' : 'Record voice'}
+                      style={{
+                        width: '40px', height: '40px', borderRadius: '50%', border: 'none', padding: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: loading || transcribing ? 'not-allowed' : 'pointer',
+                        background: recording ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
+                        color: recording ? '#ef4444' : transcribing ? '#60a5fa' : '#a3a3a3',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {recording
+                        ? <Square style={{ width: '16px', height: '16px' }} />
+                        : <Mic style={{ width: '18px', height: '18px' }} />}
+                    </button>
+                    <button
+                      onClick={handleSubmit}
+                      disabled={!input.trim() || loading}
+                      style={{
+                        width: '40px', height: '40px', borderRadius: '50%', border: 'none', padding: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', flexShrink: 0,
+                        background: input.trim() ? 'linear-gradient(to right, #2563eb, #3b82f6)' : '#262626',
+                        color: input.trim() ? 'white' : '#737373',
+                        boxShadow: input.trim() ? '0 10px 15px -3px rgba(37,99,235,0.3)' : 'none',
+                      }}
+                    >
+                      <ArrowUpIcon style={{ width: '20px', height: '20px' }} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -311,15 +383,15 @@ export default function ChatInterface() {
               <MessageBubble key={i} message={msg} />
             ))}
             {loading && messages[messages.length - 1]?.role === 'user' && (
-              <div className="flex gap-3 max-w-3xl animate-fade-in">
-                <div className="w-8 h-8 rounded-full bg-neutral-800 text-indigo-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', maxWidth: '768px', animation: 'fadeIn 0.3s ease' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#262626', color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>
                   V
                 </div>
-                <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-neutral-800/80 backdrop-blur-sm border border-neutral-700/50">
-                  <div className="flex gap-1 py-1">
-                    <div className="w-1.5 h-1.5 bg-neutral-500 rounded-full" style={{ animation: 'typingBounce 1.2s infinite' }} />
-                    <div className="w-1.5 h-1.5 bg-neutral-500 rounded-full" style={{ animation: 'typingBounce 1.2s infinite 0.2s' }} />
-                    <div className="w-1.5 h-1.5 bg-neutral-500 rounded-full" style={{ animation: 'typingBounce 1.2s infinite 0.4s' }} />
+                <div style={{ padding: '12px 16px', borderRadius: '16px 16px 16px 4px', background: 'rgba(38,38,38,0.8)', border: '1px solid rgba(64,64,64,0.5)' }}>
+                  <div style={{ display: 'flex', gap: '4px', padding: '4px 0' }}>
+                    <div style={{ width: '6px', height: '6px', background: '#737373', borderRadius: '50%', animation: 'typingBounce 1.2s infinite' }} />
+                    <div style={{ width: '6px', height: '6px', background: '#737373', borderRadius: '50%', animation: 'typingBounce 1.2s infinite 0.2s' }} />
+                    <div style={{ width: '6px', height: '6px', background: '#737373', borderRadius: '50%', animation: 'typingBounce 1.2s infinite 0.4s' }} />
                   </div>
                 </div>
               </div>
@@ -330,11 +402,14 @@ export default function ChatInterface() {
 
       {/* Bottom input - only shows when there are messages */}
       {hasMessages && (
-        <div className="px-6 py-4 bg-neutral-900/60 backdrop-blur-xl border-t border-neutral-800">
-          <div className="max-w-3xl mx-auto">
-            <div className="relative bg-black/60 backdrop-blur-md rounded-xl border border-neutral-700">
-              <Textarea
-                ref={!hasMessages ? undefined : textareaRef}
+        <div className="px-6 py-4 bg-neutral-900/60 backdrop-blur-xl" style={{ borderTop: '1px solid #262626' }}>
+          <div className="w-full">
+            <div
+              className="relative bg-black/60 backdrop-blur-md rounded-xl"
+              style={{ border: '1px solid #404040' }}
+            >
+              <textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
@@ -342,36 +417,52 @@ export default function ChatInterface() {
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask a follow-up question..."
-                className={cn(
-                  'w-full px-5 py-4 resize-none border-none',
-                  'bg-transparent text-white text-base',
-                  'focus-visible:ring-0 focus-visible:ring-offset-0',
-                  'placeholder:text-neutral-500 min-h-[56px] pt-5'
-                )}
-                style={{ overflow: 'hidden' }}
                 disabled={loading}
+                className="w-full px-5 py-4 resize-none bg-transparent text-white text-base min-h-[56px] pt-5 placeholder:text-neutral-500"
+                style={{
+                  overflow: 'hidden',
+                  border: 'none',
+                  outline: 'none',
+                  boxShadow: 'none',
+                }}
               />
-              <div className="flex items-center justify-between p-3 mt-auto">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-neutral-500 hover:text-white hover:bg-neutral-700"
-                >
-                  <Paperclip className="w-5 h-5" />
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!input.trim() || loading}
-                  className={cn(
-                    'rounded-full w-10 h-10 p-0 flex items-center justify-center transition-all',
-                    input.trim()
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5'
-                      : 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
-                  )}
-                >
-                  <ArrowUpIcon className="w-5 h-5" />
-                  <span className="sr-only">Send</span>
-                </Button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px' }}>
+                <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#737373', padding: '8px', borderRadius: '6px', display: 'flex' }}>
+                  <Paperclip style={{ width: '20px', height: '20px' }} />
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    onClick={recording ? stopRecording : startRecording}
+                    disabled={loading || transcribing}
+                    title={recording ? 'Stop recording' : 'Record voice'}
+                    style={{
+                      width: '40px', height: '40px', borderRadius: '50%', border: 'none', padding: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: loading || transcribing ? 'not-allowed' : 'pointer',
+                      background: recording ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
+                      color: recording ? '#ef4444' : transcribing ? '#60a5fa' : '#a3a3a3',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {recording
+                      ? <Square style={{ width: '16px', height: '16px' }} />
+                      : <Mic style={{ width: '18px', height: '18px' }} />}
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!input.trim() || loading}
+                    style={{
+                      width: '40px', height: '40px', borderRadius: '50%', border: 'none', padding: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', flexShrink: 0,
+                      background: input.trim() ? 'linear-gradient(to right, #2563eb, #3b82f6)' : '#404040',
+                      color: input.trim() ? 'white' : '#a3a3a3',
+                      boxShadow: input.trim() ? '0 10px 15px -3px rgba(37,99,235,0.25)' : 'none',
+                    }}
+                  >
+                    <ArrowUpIcon style={{ width: '20px', height: '20px' }} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

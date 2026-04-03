@@ -1,12 +1,14 @@
 'use client';
 
 import { AlertTriangle, CheckCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function ConflictBanner({ detected, details }) {
   if (detected) {
     return (
-      <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-fade-in">
+      <div
+        className="mt-3 p-3 rounded-lg bg-amber-500/10 animate-fade-in"
+        style={{ border: '1px solid rgba(245, 158, 11, 0.2)' }}
+      >
         <div className="flex items-center gap-2 font-semibold text-amber-400 text-xs">
           <AlertTriangle className="w-3.5 h-3.5" />
           Conflict Detected
@@ -19,7 +21,10 @@ export default function ConflictBanner({ detected, details }) {
   }
 
   return (
-    <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20 animate-fade-in">
+    <div
+      className="mt-3 p-3 rounded-lg bg-green-500/10 animate-fade-in"
+      style={{ border: '1px solid rgba(34, 197, 94, 0.2)' }}
+    >
       <div className="flex items-center gap-2 font-semibold text-green-400 text-xs">
         <CheckCircle className="w-3.5 h-3.5" />
         Sources Consistent

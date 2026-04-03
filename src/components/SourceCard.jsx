@@ -21,7 +21,10 @@ export default function SourceCard({ source }) {
   const dotColor = RELEVANCE_COLORS[source.relevance] || RELEVANCE_COLORS.medium;
 
   return (
-    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-900/60 border border-neutral-700/50 rounded-full text-[11px] font-medium text-neutral-400">
+    <div
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-900/60 rounded-full text-[11px] font-medium text-neutral-400"
+      style={{ border: '1px solid rgba(64, 64, 64, 0.5)' }}
+    >
       <span className={cn('w-1.5 h-1.5 rounded-full', dotColor)} />
       <Icon className="w-3 h-3" />
       <span>{source.filename}</span>

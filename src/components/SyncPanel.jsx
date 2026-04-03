@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { X, Mail, FolderOpen, Loader2, CheckCircle, AlertCircle, Unplug } from 'lucide-react';
 
@@ -76,25 +75,34 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
     }
   }
 
+  const inputStyle = {
+    border: '1px solid #404040',
+    outline: 'none',
+  };
+
+  const inputFocusStyle = '1px solid #3b82f6';
+
   return (
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 w-[520px] max-w-[90vw] shadow-2xl shadow-black/50 animate-slide-up">
+      <div
+        className="bg-neutral-900 rounded-2xl p-8 w-[520px] max-w-[90vw] shadow-2xl shadow-black/50 animate-slide-up"
+        style={{ border: '1px solid #262626' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">
             Sync Google
           </h2>
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={onClose}
-            className="text-neutral-500 hover:text-white hover:bg-neutral-800"
+            className="p-2 rounded-md text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+            style={{ border: 'none', background: 'none' }}
           >
             <X className="w-4 h-4" />
-          </Button>
+          </button>
         </div>
 
         {checkingStatus ? (
@@ -104,7 +112,10 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
         ) : !connected ? (
           /* Not connected */
           <div className="mt-6 flex flex-col items-center text-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-neutral-800 border border-neutral-700 flex items-center justify-center">
+            <div
+              className="w-14 h-14 rounded-2xl bg-neutral-800 flex items-center justify-center"
+              style={{ border: '1px solid #404040' }}
+            >
               {/* Google-colored G icon */}
               <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -121,7 +132,12 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
             </div>
             <a
               href="/api/auth/google"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-medium transition-all hover:-translate-y-0.5"
+              style={{
+                background: 'linear-gradient(to right, #2563eb, #3b82f6)',
+                boxShadow: '0 10px 15px -3px rgba(37,99,235,0.25)',
+                border: 'none',
+              }}
             >
               Connect Google Account
             </a>
@@ -140,7 +156,8 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
               </div>
               <button
                 onClick={handleDisconnect}
-                className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-red-400 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
+                style={{ border: 'none', background: 'none' }}
               >
                 <Unplug className="w-3.5 h-3.5" />
                 Disconnect
@@ -148,7 +165,10 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
             </div>
 
             {/* Gmail section */}
-            <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-4 space-y-3">
+            <div
+              className="bg-neutral-800/50 rounded-xl p-4 space-y-3"
+              style={{ border: '1px solid rgba(64,64,64,0.5)' }}
+            >
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-md bg-orange-400/10 flex items-center justify-center">
                   <Mail className="w-4 h-4 text-orange-400" />
@@ -160,7 +180,10 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
                 placeholder="from:boss@company.com or label:work"
                 value={gmailQuery}
                 onChange={(e) => setGmailQuery(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 bg-neutral-900 rounded-lg text-sm text-neutral-200 placeholder-neutral-600"
+                style={inputStyle}
+                onFocus={(e) => e.target.style.border = inputFocusStyle}
+                onBlur={(e) => e.target.style.border = inputStyle.border}
               />
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 flex-1">
@@ -171,13 +194,17 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
                     max={100}
                     value={gmailMax}
                     onChange={(e) => setGmailMax(Number(e.target.value))}
-                    className="w-20 px-2 py-1.5 bg-neutral-900 border border-neutral-700 rounded-lg text-sm text-neutral-200 focus:outline-none focus:border-indigo-500"
+                    className="w-20 px-2 py-1.5 bg-neutral-900 rounded-lg text-sm text-neutral-200"
+                    style={inputStyle}
+                    onFocus={(e) => e.target.style.border = inputFocusStyle}
+                    onBlur={(e) => e.target.style.border = inputStyle.border}
                   />
                 </div>
-                <Button
+                <button
                   onClick={handleGmailSync}
                   disabled={gmailLoading}
-                  className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border border-orange-500/30 hover:border-orange-500/50"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 transition-colors cursor-pointer disabled:opacity-50"
+                  style={{ border: '1px solid rgba(249,115,22,0.3)' }}
                 >
                   {gmailLoading ? (
                     <>
@@ -187,7 +214,7 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
                   ) : (
                     'Sync Gmail'
                   )}
-                </Button>
+                </button>
               </div>
               {gmailResult && (
                 <SyncResult result={gmailResult} />
@@ -195,7 +222,10 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
             </div>
 
             {/* Drive section */}
-            <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-4 space-y-3">
+            <div
+              className="bg-neutral-800/50 rounded-xl p-4 space-y-3"
+              style={{ border: '1px solid rgba(64,64,64,0.5)' }}
+            >
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-md bg-blue-400/10 flex items-center justify-center">
                   <FolderOpen className="w-4 h-4 text-blue-400" />
@@ -207,7 +237,10 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
                 placeholder="Leave blank to search all of Drive"
                 value={driveFolderId}
                 onChange={(e) => setDriveFolderId(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 bg-neutral-900 rounded-lg text-sm text-neutral-200 placeholder-neutral-600"
+                style={inputStyle}
+                onFocus={(e) => e.target.style.border = inputFocusStyle}
+                onBlur={(e) => e.target.style.border = inputStyle.border}
               />
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 flex-1">
@@ -218,13 +251,17 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
                     max={100}
                     value={driveMax}
                     onChange={(e) => setDriveMax(Number(e.target.value))}
-                    className="w-20 px-2 py-1.5 bg-neutral-900 border border-neutral-700 rounded-lg text-sm text-neutral-200 focus:outline-none focus:border-indigo-500"
+                    className="w-20 px-2 py-1.5 bg-neutral-900 rounded-lg text-sm text-neutral-200"
+                    style={inputStyle}
+                    onFocus={(e) => e.target.style.border = inputFocusStyle}
+                    onBlur={(e) => e.target.style.border = inputStyle.border}
                   />
                 </div>
-                <Button
+                <button
                   onClick={handleDriveSync}
                   disabled={driveLoading}
-                  className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 hover:border-blue-500/50"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 transition-colors cursor-pointer disabled:opacity-50"
+                  style={{ border: '1px solid rgba(59,130,246,0.3)' }}
                 >
                   {driveLoading ? (
                     <>
@@ -234,7 +271,7 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
                   ) : (
                     'Sync Drive'
                   )}
-                </Button>
+                </button>
               </div>
               <p className="text-[11px] text-neutral-600">
                 Supports: PDF, Google Docs, Google Sheets, Excel

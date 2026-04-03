@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { FolderOpen, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
@@ -60,20 +59,22 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 w-[480px] max-w-[90vw] shadow-2xl shadow-black/50 animate-slide-up">
+      <div
+        className="bg-neutral-900 rounded-2xl p-8 w-[480px] max-w-[90vw] shadow-2xl shadow-black/50 animate-slide-up"
+        style={{ border: '1px solid #262626' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">
             Upload Documents
           </h2>
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={onClose}
-            className="text-neutral-500 hover:text-white hover:bg-neutral-800"
+            className="p-2 rounded-md text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+            style={{ border: 'none', background: 'none' }}
           >
             <X className="w-4 h-4" />
-          </Button>
+          </button>
         </div>
         <p className="text-sm text-neutral-500 mb-5">
           Supported formats: PDF, Excel (.xlsx), Email (.eml)
@@ -82,11 +83,16 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
         {/* Drop zone */}
         <div
           className={cn(
-            'border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all',
+            'rounded-xl p-10 text-center cursor-pointer transition-all',
             dragging
-              ? 'border-indigo-500 bg-indigo-500/10'
-              : 'border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800/50'
+              ? 'bg-blue-500/10'
+              : 'hover:bg-neutral-800/50'
           )}
+          style={{
+            border: dragging
+              ? '2px dashed #3b82f6'
+              : '2px dashed #404040',
+          }}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
@@ -125,7 +131,7 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
                     <span className="text-neutral-500">Waiting...</span>
                   )}
                   {f.status === 'processing' && (
-                    <span className="text-indigo-400 flex items-center gap-1">
+                    <span className="text-blue-400 flex items-center gap-1">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       Processing...
                     </span>
@@ -150,12 +156,13 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
 
         {/* Done button */}
         {allDone && (
-          <Button
+          <button
             onClick={onClose}
-            className="w-full mt-5 bg-neutral-800 hover:bg-neutral-700 text-white"
+            className="w-full mt-5 px-4 py-2 rounded-md bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-medium transition-colors cursor-pointer"
+            style={{ border: 'none' }}
           >
             Done
-          </Button>
+          </button>
         )}
       </div>
     </div>

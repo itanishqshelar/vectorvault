@@ -20,7 +20,8 @@ export async function GET(request) {
       maxAge: 60 * 60 * 24 * 30, // 30 days
     });
     return response;
-  } catch {
+  } catch (err) {
+    console.error('OAuth callback error:', err?.message, err?.response?.data);
     return NextResponse.redirect(new URL('/?auth=error', request.url));
   }
 }

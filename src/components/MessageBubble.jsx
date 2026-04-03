@@ -10,12 +10,38 @@ export default function MessageBubble({ message }) {
 
   if (message.role === 'user') {
     return (
-      <div className="flex gap-3 max-w-3xl self-end flex-row-reverse animate-fade-in">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-sm flex-shrink-0">
-          U
-        </div>
-        <div className="px-4 py-3 rounded-2xl rounded-br-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm leading-relaxed">
-          {message.content}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', animation: 'fadeIn 0.3s ease' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', maxWidth: '768px' }}>
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: '16px 16px 4px 16px',
+              color: 'white',
+              fontSize: '14px',
+              lineHeight: '1.625',
+              background: 'linear-gradient(to right, #2563eb, #3b82f6)',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+            }}
+          >
+            {message.content}
+          </div>
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '14px',
+              flexShrink: 0,
+              background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+            }}
+          >
+            U
+          </div>
         </div>
       </div>
     );
@@ -23,13 +49,37 @@ export default function MessageBubble({ message }) {
 
   const parsed = message.parsed;
 
+  const avatarStyle = {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    background: '#262626',
+    color: '#60a5fa',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '14px',
+    flexShrink: 0,
+  };
+
+  const bubbleStyle = {
+    minWidth: 0,
+    padding: '12px 16px',
+    borderRadius: '16px 16px 16px 4px',
+    background: 'rgba(38, 38, 38, 0.8)',
+    backdropFilter: 'blur(8px)',
+    border: '1px solid rgba(64, 64, 64, 0.5)',
+    fontSize: '14px',
+    lineHeight: '1.625',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
+  };
+
   if (!parsed) {
     return (
-      <div className="flex gap-3 max-w-3xl animate-fade-in">
-        <div className="w-8 h-8 rounded-full bg-neutral-800 text-indigo-400 flex items-center justify-center text-sm flex-shrink-0">
-          V
-        </div>
-        <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-neutral-800/80 backdrop-blur-sm border border-neutral-700/50 text-neutral-200 text-sm leading-relaxed">
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', maxWidth: '768px', animation: 'fadeIn 0.3s ease' }}>
+        <div style={avatarStyle}>V</div>
+        <div style={{ ...bubbleStyle, color: '#e5e5e5', whiteSpace: 'pre-wrap' }}>
           {message.content}
         </div>
       </div>
@@ -37,17 +87,15 @@ export default function MessageBubble({ message }) {
   }
 
   return (
-    <div className="flex gap-3 max-w-3xl animate-fade-in">
-      <div className="w-8 h-8 rounded-full bg-neutral-800 text-indigo-400 flex items-center justify-center text-sm flex-shrink-0">
-        V
-      </div>
-      <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-neutral-800/80 backdrop-blur-sm border border-neutral-700/50 text-sm leading-relaxed">
-        <div className="text-neutral-200 whitespace-pre-wrap mb-3">
+    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', maxWidth: '768px', animation: 'fadeIn 0.3s ease' }}>
+      <div style={avatarStyle}>V</div>
+      <div style={bubbleStyle}>
+        <div style={{ color: '#e5e5e5', whiteSpace: 'pre-wrap' }}>
           {parsed.answer}
         </div>
 
         {parsed.sources && parsed.sources.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
             {parsed.sources.map((src, i) => (
               <SourceCard key={i} source={src} />
             ))}
@@ -64,18 +112,40 @@ export default function MessageBubble({ message }) {
         {parsed.reasoning && (
           <>
             <button
-              className="mt-3 flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+              style={{
+                marginTop: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '12px',
+                color: '#737373',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
               onClick={() => setShowReasoning(!showReasoning)}
             >
               {showReasoning ? (
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown style={{ width: '12px', height: '12px' }} />
               ) : (
-                <ChevronRight className="w-3 h-3" />
+                <ChevronRight style={{ width: '12px', height: '12px' }} />
               )}
               Reasoning
             </button>
             {showReasoning && (
-              <div className="mt-2 px-3 py-2.5 bg-neutral-900/60 rounded-lg text-xs text-neutral-400 leading-relaxed">
+              <div
+                style={{
+                  marginTop: '8px',
+                  padding: '10px 12px',
+                  background: 'rgba(23, 23, 23, 0.6)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: '#a3a3a3',
+                  lineHeight: '1.625',
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
                 {parsed.reasoning}
               </div>
             )}
