@@ -1,5 +1,5 @@
 /* ===== VectorVault Design System ===== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 :root {
   --bg-primary: #ffffff;
@@ -32,6 +32,9 @@
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-full: 9999px;
+
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {
@@ -41,8 +44,13 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg-secondary);
+  font-family: var(--font-body);
+  background:
+    radial-gradient(ellipse at 15% 55%, rgba(99, 102, 241, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(139, 92, 246, 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse at 65% 85%, rgba(99, 102, 241, 0.12) 0%, transparent 45%),
+    #f4f5fb;
+  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -58,8 +66,11 @@ body {
 /* ===== Sidebar ===== */
 .sidebar {
   width: 280px;
-  background: var(--bg-primary);
-  border-right: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-right: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 2px 0 32px rgba(99, 102, 241, 0.10);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -67,7 +78,7 @@ body {
 
 .sidebar-header {
   padding: 20px;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.50);
 }
 
 .sidebar-brand {
@@ -87,9 +98,11 @@ body {
   color: white;
   font-weight: 700;
   font-size: 16px;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), var(--shadow-accent);
 }
 
 .sidebar-title {
+  font-family: var(--font-display);
   font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
@@ -106,18 +119,23 @@ body {
   display: flex;
   gap: 12px;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.50);
 }
 
 .stat-card {
   flex: 1;
-  background: var(--bg-secondary);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.70);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.10);
   padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   text-align: center;
 }
 
 .stat-value {
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
   color: var(--accent);
@@ -156,7 +174,8 @@ body {
 }
 
 .source-item:hover {
-  background: var(--bg-secondary);
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: var(--radius-md);
 }
 
 .source-icon {
@@ -229,11 +248,15 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 14px 24px;
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
 }
 
 .header-title {
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
@@ -248,8 +271,9 @@ body {
 .upload-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.25);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -258,16 +282,20 @@ body {
 }
 
 .upload-panel {
-  background: var(--bg-primary);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: var(--radius-lg);
   padding: 32px;
   width: 480px;
   max-width: 90vw;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
   animation: slideUp 0.3s ease;
 }
 
 .upload-title {
+  font-family: var(--font-display);
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 4px;
@@ -340,7 +368,7 @@ body {
 }
 
 .chat-empty-icon { font-size: 48px; opacity: 0.5; }
-.chat-empty-title { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.chat-empty-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text-primary); }
 .chat-empty-text { font-size: 14px; max-width: 400px; text-align: center; }
 
 /* ===== Messages ===== */
@@ -381,10 +409,12 @@ body {
 }
 
 .message.ai .message-content {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   border-bottom-left-radius: 4px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .message-answer { margin-bottom: 12px; white-space: pre-wrap; }
@@ -502,8 +532,10 @@ body {
 /* ===== Input Area ===== */
 .chat-input-area {
   padding: 16px 24px 20px;
-  background: var(--bg-primary);
-  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255, 255, 255, 0.55);
 }
 
 .chat-input-wrapper {
@@ -523,14 +555,18 @@ body {
   font-family: inherit;
   resize: none;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   min-height: 44px;
   max-height: 120px;
   line-height: 1.5;
+  background: rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .chat-input:focus {
   border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.90);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 

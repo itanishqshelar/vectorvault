@@ -1,23 +1,32 @@
-import { PDFParse } from 'pdf-parse';
-
-// Disable pdfjs web worker — not supported in Next.js server environment
-PDFParse.setWorker('');
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 export async function parsePDF(buffer, filename) {
-  const parser = new PDFParse({ data: buffer });
-  const [textResult, infoResult] = await Promise.all([
-    parser.getText(),
-    parser.getInfo(),
-  ]);
-  await parser.destroy();
+  const data = new Uint8Array(buffer);
+  const doc = await getDocument({ data }).promise;
+
+  let fullText = '';
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    fullText += content.items.map((item) => item.str).join(' ') + '\n';
+  }
+
+  let title = filename;
+  try {
+    const metadata = await doc.getMetadata();
+    title = metadata?.info?.Title || filename;
+  } catch {}
+
+  const numPages = doc.numPages;
+  await doc.destroy();
 
   return {
-    text: textResult.text,
+    text: fullText.trim(),
     metadata: {
       source_type: 'pdf',
       filename,
-      pages: textResult.total,
-      title: infoResult.info?.Title || filename,
+      pages: numPages,
+      title,
     },
   };
 }
