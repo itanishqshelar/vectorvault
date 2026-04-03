@@ -6,11 +6,11 @@ const TYPE_ICONS = {
   email: { icon: '\u2709\uFE0F', cls: 'email' },
 };
 
-export default function Sidebar({ sources, onDeleteSource }) {
+export default function Sidebar({ sources, onDeleteSource, isCollapsed }) {
   const totalChunks = sources.reduce((sum, s) => sum + (s.chunk_count || 0), 0);
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-brand">
           <div className="sidebar-logo">V</div>

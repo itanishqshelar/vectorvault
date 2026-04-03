@@ -9,6 +9,7 @@ import UploadPanel from '@/components/UploadPanel';
 export default function Home() {
   const [sources, setSources] = useState([]);
   const [showUpload, setShowUpload] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const fetchSources = useCallback(async () => {
     try {
@@ -39,9 +40,17 @@ export default function Home() {
 
   return (
     <div className="app-layout">
-      <Sidebar sources={sources} onDeleteSource={handleDeleteSource} />
+      <Sidebar 
+        sources={sources} 
+        onDeleteSource={handleDeleteSource} 
+        isCollapsed={isSidebarCollapsed} 
+      />
       <div className="main-content">
-        <Header onUploadClick={() => setShowUpload(true)} />
+        <Header 
+          onUploadClick={() => setShowUpload(true)} 
+          toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          isSidebarCollapsed={isSidebarCollapsed}
+        />
         <ChatInterface />
       </div>
       {showUpload && (
