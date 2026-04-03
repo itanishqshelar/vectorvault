@@ -5,31 +5,36 @@ import { Radio, X, Mic, MicOff } from 'lucide-react';
 import useGeminiLive from '@/hooks/useGeminiLive';
 
 /**
- * LiveVoiceOrb: A stunning animated orb UI for Gemini Live Voice.
+ * LiveVoiceOrb: Animated orb UI for Gemini Live Voice.
  *
- * Behavior:
- * - Shows a pulsing animated orb when a live session is active
- * - Transcripts (user & AI) are collected and stored as text messages
- * - On disconnect, accumulated transcripts are injected into the chat history
+ * Transcripts are accumulated via refs (not state) so handleClose
+ * always sees the latest data regardless of React render cycles.
  */
 export default function LiveVoiceOrb({ onSessionEnd, isOpen, onClose }) {
-  const [userTranscripts, setUserTranscripts] = useState([]);
-  const [aiTranscripts, setAiTranscripts] = useState([]);
   const [currentUserText, setCurrentUserText] = useState('');
   const [currentAiText, setCurrentAiText] = useState('');
+
+  // All accumulated transcript turns – stored in refs for immediate access
+  const userTurnsRef = useRef([]);
+  const aiTurnsRef = useRef([]);
+
+  // Current buffers for the in-progress turn
   const userBufferRef = useRef('');
   const aiBufferRef = useRef('');
-  const turnTimeoutRef = useRef(null);
+
+  // Separate timeouts for user and AI turns
+  const userTimeoutRef = useRef(null);
+  const aiTimeoutRef = useRef(null);
 
   const handleTranscript = useCallback(({ role, text }) => {
     if (role === 'user') {
       userBufferRef.current += text;
       setCurrentUserText(userBufferRef.current);
 
-      clearTimeout(turnTimeoutRef.current);
-      turnTimeoutRef.current = setTimeout(() => {
+      clearTimeout(userTimeoutRef.current);
+      userTimeoutRef.current = setTimeout(() => {
         if (userBufferRef.current.trim()) {
-          setUserTranscripts((prev) => [...prev, userBufferRef.current.trim()]);
+          userTurnsRef.current.push(userBufferRef.current.trim());
         }
         userBufferRef.current = '';
         setCurrentUserText('');
@@ -38,10 +43,10 @@ export default function LiveVoiceOrb({ onSessionEnd, isOpen, onClose }) {
       aiBufferRef.current += text;
       setCurrentAiText(aiBufferRef.current);
 
-      clearTimeout(turnTimeoutRef.current);
-      turnTimeoutRef.current = setTimeout(() => {
+      clearTimeout(aiTimeoutRef.current);
+      aiTimeoutRef.current = setTimeout(() => {
         if (aiBufferRef.current.trim()) {
-          setAiTranscripts((prev) => [...prev, aiBufferRef.current.trim()]);
+          aiTurnsRef.current.push(aiBufferRef.current.trim());
         }
         aiBufferRef.current = '';
         setCurrentAiText('');
@@ -61,16 +66,25 @@ export default function LiveVoiceOrb({ onSessionEnd, isOpen, onClose }) {
   }, [isOpen, status, connect]);
 
   const handleClose = useCallback(() => {
-    // Flush any remaining buffers
-    const finalUserText = userBufferRef.current.trim();
-    const finalAiText = aiBufferRef.current.trim();
+    // Clear pending timeouts
+    clearTimeout(userTimeoutRef.current);
+    clearTimeout(aiTimeoutRef.current);
 
-    const allUserTexts = [...userTranscripts, ...(finalUserText ? [finalUserText] : [])];
-    const allAiTexts = [...aiTranscripts, ...(finalAiText ? [finalAiText] : [])];
+    // Flush any remaining buffer content into turns
+    if (userBufferRef.current.trim()) {
+      userTurnsRef.current.push(userBufferRef.current.trim());
+    }
+    if (aiBufferRef.current.trim()) {
+      aiTurnsRef.current.push(aiBufferRef.current.trim());
+    }
+
+    // Read final accumulated turns from refs (always current)
+    const allUserTexts = [...userTurnsRef.current];
+    const allAiTexts = [...aiTurnsRef.current];
 
     disconnect();
 
-    // Build messages from the accumulated transcripts
+    // Build interleaved messages from the accumulated transcripts
     const messages = [];
     const maxLen = Math.max(allUserTexts.length, allAiTexts.length);
     for (let i = 0; i < maxLen; i++) {
@@ -86,16 +100,16 @@ export default function LiveVoiceOrb({ onSessionEnd, isOpen, onClose }) {
       onSessionEnd?.(messages);
     }
 
-    // Reset state
-    setUserTranscripts([]);
-    setAiTranscripts([]);
-    setCurrentUserText('');
-    setCurrentAiText('');
+    // Reset everything
+    userTurnsRef.current = [];
+    aiTurnsRef.current = [];
     userBufferRef.current = '';
     aiBufferRef.current = '';
+    setCurrentUserText('');
+    setCurrentAiText('');
 
     onClose?.();
-  }, [disconnect, userTranscripts, aiTranscripts, onSessionEnd, onClose]);
+  }, [disconnect, onSessionEnd, onClose]);
 
   if (!isOpen) return null;
 

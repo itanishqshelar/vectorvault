@@ -19,7 +19,8 @@ export default function Sidebar({
   sessions = [],
   currentSessionId,
   onSelectSession,
-  onNewChat
+  onNewChat,
+  onDeleteSession
 }) {
   const totalChunks = sources.reduce((sum, s) => sum + (s.chunk_count || 0), 0);
   const [loadingView, setLoadingView] = useState(null);
@@ -187,6 +188,16 @@ export default function Sidebar({
                       {session.title || 'New Chat'}
                     </div>
                   </div>
+                  {onDeleteSession && sessions.length > 1 && (
+                    <button
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-neutral-500 hover:text-red-400 hover:bg-red-400/10 transition-all cursor-pointer"
+                      style={{ border: 'none', background: 'none' }}
+                      onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); }}
+                      title="Delete chat"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               ))
             )}
