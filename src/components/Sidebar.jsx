@@ -1,10 +1,11 @@
 'use client';
 
-import { FileText, Sheet, Mail, FolderOpen, Trash2, Eye, Plus, MessageSquare } from 'lucide-react';
+import { FileText, Sheet, Mail, FolderOpen, Trash2, Eye, Plus, MessageSquare, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import Image from 'next/image';
 import LanguageSelector from './LanguageSelector';
+import SearchModal from './SearchModal';
 
 const TYPE_ICONS = {
   pdf: { icon: FileText, cls: 'text-red-400 bg-red-400/10' },
@@ -26,6 +27,7 @@ export default function Sidebar({
 }) {
   const totalChunks = sources.reduce((sum, s) => sum + (s.chunk_count || 0), 0);
   const [loadingView, setLoadingView] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   async function handleView(sourceId) {
     setLoadingView(sourceId);
@@ -106,10 +108,19 @@ export default function Sidebar({
       {/* Scrollable Container for both sections */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         
+        <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+
         {/* Document Library Section */}
         <div className="flex flex-col flex-1 min-h-0 border-b border-[#262626]">
-          <div className="px-5 pt-4 pb-2 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
-            Document Library
+          <div className="px-5 pt-4 pb-2 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider flex items-center justify-between">
+            <span>Document Library</span>
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="p-1 hover:bg-neutral-800 rounded text-neutral-400 hover:text-blue-400 transition-colors cursor-pointer"
+              title="Search documents (Ctrl+K)"
+            >
+              <Search className="w-3.5 h-3.5" />
+            </button>
           </div>
           <div className="flex-1 overflow-y-auto px-3 pb-3">
             {sources.length === 0 ? (
