@@ -39,15 +39,15 @@ export default function Home() {
   };
 
   return (
-    <div className="app-layout">
-      <Sidebar 
-        sources={sources} 
-        onDeleteSource={handleDeleteSource} 
-        isCollapsed={isSidebarCollapsed} 
+    <div className="flex h-screen overflow-hidden bg-neutral-950">
+      <Sidebar
+        sources={sources}
+        onDeleteSource={handleDeleteSource}
+        isCollapsed={isSidebarCollapsed}
       />
-      <div className="main-content">
-        <Header 
-          onUploadClick={() => setShowUpload(true)} 
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header
+          onUploadClick={() => setShowUpload(true)}
           toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           isSidebarCollapsed={isSidebarCollapsed}
         />
