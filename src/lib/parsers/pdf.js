@@ -1,32 +1,26 @@
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import pdf from 'pdf-parse';
 
 export async function parsePDF(buffer, filename) {
-  const data = new Uint8Array(buffer);
-  const doc = await getDocument({ data }).promise;
-
-  let fullText = '';
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    fullText += content.items.map((item) => item.str).join(' ') + '\n';
-  }
-
-  let title = filename;
   try {
-    const metadata = await doc.getMetadata();
-    title = metadata?.info?.Title || filename;
-  } catch {}
+    const dataBuffer = Buffer.from(buffer);
+    const data = await pdf(dataBuffer);
 
-  const numPages = doc.numPages;
-  await doc.destroy();
+    let title = filename;
+    if (data.info && data.info.Title) {
+      title = data.info.Title;
+    }
 
-  return {
-    text: fullText.trim(),
-    metadata: {
-      source_type: 'pdf',
-      filename,
-      pages: numPages,
-      title,
-    },
-  };
+    return {
+      text: data.text.trim(),
+      metadata: {
+        source_type: 'pdf',
+        filename,
+        pages: data.numpages,
+        title,
+      },
+    };
+  } catch (error) {
+    console.error('Error parsing PDF with pdf-parse:', error);
+    throw new Error('Failed to parse PDF document.');
+  }
 }
