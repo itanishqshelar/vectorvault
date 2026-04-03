@@ -1,12 +1,19 @@
-import { NextResponse } from 'next/server';
-export const maxDuration = 60; // Allow more time for processing PDFs on Vercel
+import { NextResponse, after } from 'next/server';
+export const maxDuration = 60;
+
 import { parsePDF } from '@/lib/parsers/pdf';
 import { parseExcel } from '@/lib/parsers/excel';
 import { parseEmail } from '@/lib/parsers/email';
 import { parseImage } from '@/lib/parsers/image';
 import { chunkText } from '@/lib/chunker';
 import { generateEmbeddings } from '@/lib/gemini';
-import { createSource, insertDocuments, uploadSourceFile, updateSourceStoragePath } from '@/lib/supabase';
+import {
+  createSource,
+  insertDocuments,
+  uploadSourceFile,
+  updateSourceStoragePath,
+  updateSourceStatus,
+} from '@/lib/supabase';
 
 const PARSERS = {
   pdf: parsePDF,
@@ -37,6 +44,47 @@ function getFileType(filename) {
   return null;
 }
 
+async function processSource(source, buffer, filename, ext, sourceType) {
+  try {
+    // Parse the file
+    const parser = PARSERS[ext];
+    const parsed = await parser(buffer, filename);
+
+    if (!parsed.text || parsed.text.trim().length === 0) {
+      await updateSourceStatus(source.id, 'error', 'No text content extracted from file');
+      return;
+    }
+
+    // Chunk the text
+    const chunks = chunkText(parsed.text, {
+      source_type: sourceType,
+      filename,
+      ...parsed.metadata,
+    });
+
+    // Generate embeddings for all chunks
+    const texts = chunks.map((c) => c.content);
+    const embeddings = await generateEmbeddings(texts);
+
+    // Attach embeddings to chunks
+    const chunksWithEmbeddings = chunks.map((chunk, i) => ({
+      ...chunk,
+      embedding: embeddings[i],
+    }));
+
+    // Insert into Supabase
+    await insertDocuments(source.id, chunksWithEmbeddings);
+
+    // Mark as ready
+    await updateSourceStatus(source.id, 'ready');
+  } catch (error) {
+    console.error(`Processing failed for source ${source.id}:`, error);
+    await updateSourceStatus(source.id, 'error', error.message || 'Processing failed').catch(
+      (e) => console.error('Failed to update error status:', e)
+    );
+  }
+}
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -59,52 +107,31 @@ export async function POST(request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Parse the file
-    const parser = PARSERS[ext];
-    const parsed = await parser(buffer, filename);
-
-    if (!parsed.text || parsed.text.trim().length === 0) {
-      return NextResponse.json({ error: 'No text content extracted from file' }, { status: 400 });
-    }
-
-    // Create source record
+    // Create source record with processing status
     const source = await createSource({
       filename,
       sourceType,
       fileSize: buffer.length,
-      metadata: parsed.metadata,
+      metadata: {},
     });
 
-    // Chunk the text
-    const chunks = chunkText(parsed.text, {
-      source_type: sourceType,
-      filename,
-      ...parsed.metadata,
-    });
-
-    // Generate embeddings for all chunks
-    const texts = chunks.map((c) => c.content);
-    const embeddings = await generateEmbeddings(texts);
-
-    // Attach embeddings to chunks
-    const chunksWithEmbeddings = chunks.map((chunk, i) => ({
-      ...chunk,
-      embedding: embeddings[i],
-    }));
-
-    // Insert into Supabase
-    await insertDocuments(source.id, chunksWithEmbeddings);
-
-    // Upload original file to Supabase Storage
+    // Upload original file to Supabase Storage immediately
     const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
     const storagePath = await uploadSourceFile(source.id, filename, buffer, mimeType);
     await updateSourceStoragePath(source.id, storagePath);
+    await updateSourceStatus(source.id, 'processing');
 
+    // Process in background after response is sent
+    after(async () => {
+      await processSource(source, buffer, filename, ext, sourceType);
+    });
+
+    // Return immediately — frontend will poll for status
     return NextResponse.json({
       source_id: source.id,
       filename,
       source_type: sourceType,
-      chunks_count: chunks.length,
+      status: 'processing',
     });
   } catch (error) {
     console.error('Ingest error:', error);

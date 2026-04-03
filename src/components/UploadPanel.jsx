@@ -2,12 +2,61 @@
 
 import { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { FolderOpen, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { FolderOpen, X, Loader2, CheckCircle, AlertCircle, RotateCw } from 'lucide-react';
+
+async function pollStatus(sourceId, maxAttempts = 60) {
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      const res = await fetch(`/api/ingest/status/${sourceId}`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.status === 'ready') return { success: true };
+      if (data.status === 'error') return { success: false, error: data.error_message || 'Processing failed' };
+    } catch {
+      // Network hiccup, keep polling
+    }
+  }
+  return { success: false, error: 'Processing timed out' };
+}
 
 export default function UploadPanel({ onClose, onUploadComplete }) {
   const [files, setFiles] = useState([]);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  const updateFile = (name, updates) => {
+    setFiles((prev) => prev.map((f) => (f.name === name ? { ...f, ...updates } : f)));
+  };
+
+  const retryProcess = async (fileEntry) => {
+    updateFile(fileEntry.name, { status: 'processing', result: 'Retrying...' });
+    try {
+      const res = await fetch('/api/ingest/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_id: fileEntry.sourceId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'ready') {
+          updateFile(fileEntry.name, { status: 'done', result: `${data.chunks_count} chunks` });
+          onUploadComplete();
+          return;
+        }
+      }
+    } catch {
+      // Retry endpoint itself may timeout, fall through to polling
+    }
+    // Poll for status
+    const result = await pollStatus(fileEntry.sourceId);
+    if (result.success) {
+      updateFile(fileEntry.name, { status: 'done', result: 'Processed' });
+    } else {
+      updateFile(fileEntry.name, { status: 'error', result: result.error });
+    }
+    onUploadComplete();
+  };
 
   const handleFiles = async (fileList) => {
     const newFiles = Array.from(fileList).map((f) => ({
@@ -15,43 +64,49 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
       name: f.name,
       status: 'pending',
       result: null,
+      sourceId: null,
     }));
 
     setFiles((prev) => [...prev, ...newFiles]);
 
     for (const fileEntry of newFiles) {
-      setFiles((prev) =>
-        prev.map((f) => (f.name === fileEntry.name ? { ...f, status: 'processing' } : f))
-      );
+      updateFile(fileEntry.name, { status: 'uploading', result: 'Uploading...' });
 
       try {
+        // Step 1: Upload file (fast — just stores file and creates source record)
         const formData = new FormData();
         formData.append('file', fileEntry.file);
 
         const res = await fetch('/api/ingest', { method: 'POST', body: formData });
-        
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error(`Server error ${res.status}: Upload might have timed out`);
+
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error(`Server error ${res.status}: Upload failed`);
         }
 
         const data = await res.json();
-
         if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.name === fileEntry.name
-              ? { ...f, status: 'done', result: `${data.chunks_count} chunks` }
-              : f
-          )
-        );
+        fileEntry.sourceId = data.source_id;
+        updateFile(fileEntry.name, {
+          status: 'processing',
+          result: 'Processing...',
+          sourceId: data.source_id,
+        });
+
+        // Step 2: Poll for processing completion (background processing via after())
+        const result = await pollStatus(data.source_id);
+        if (result.success) {
+          updateFile(fileEntry.name, { status: 'done', result: 'Ingested' });
+        } else {
+          updateFile(fileEntry.name, {
+            status: 'error',
+            result: result.error,
+            sourceId: data.source_id,
+          });
+        }
       } catch (err) {
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.name === fileEntry.name ? { ...f, status: 'error', result: err.message } : f
-          )
-        );
+        updateFile(fileEntry.name, { status: 'error', result: err.message });
       }
     }
 
@@ -90,27 +145,26 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
         <div
           className={cn(
             'rounded-xl p-10 text-center cursor-pointer transition-all',
-            dragging
-              ? 'bg-blue-500/10'
-              : 'hover:bg-neutral-800/50'
+            dragging ? 'bg-blue-500/10' : 'hover:bg-neutral-800/50'
           )}
           style={{
-            border: dragging
-              ? '2px dashed #3b82f6'
-              : '2px dashed #404040',
+            border: dragging ? '2px dashed #3b82f6' : '2px dashed #404040',
           }}
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
           onDragLeave={() => setDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            handleFiles(e.dataTransfer.files);
+          }}
           onClick={() => fileInputRef.current?.click()}
         >
           <FolderOpen className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
-          <div className="text-sm text-neutral-300 font-medium">
-            Drop files here or click to browse
-          </div>
-          <div className="text-xs text-neutral-600 mt-1">
-            PDF, XLSX, XLS, EML, PNG, JPG up to 10MB
-          </div>
+          <div className="text-sm text-neutral-300 font-medium">Drop files here or click to browse</div>
+          <div className="text-xs text-neutral-600 mt-1">PDF, XLSX, XLS, EML, PNG, JPG up to 10MB</div>
           <input
             ref={fileInputRef}
             type="file"
@@ -125,16 +179,15 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
         {files.length > 0 && (
           <div className="mt-5 space-y-2">
             {files.map((f, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 px-3 py-2.5 bg-neutral-800/60 rounded-lg"
-              >
-                <span className="flex-1 text-sm font-medium text-neutral-300 truncate">
-                  {f.name}
-                </span>
+              <div key={i} className="flex items-center gap-3 px-3 py-2.5 bg-neutral-800/60 rounded-lg">
+                <span className="flex-1 text-sm font-medium text-neutral-300 truncate">{f.name}</span>
                 <span className="flex items-center gap-1.5 text-xs font-medium">
-                  {f.status === 'pending' && (
-                    <span className="text-neutral-500">Waiting...</span>
+                  {f.status === 'pending' && <span className="text-neutral-500">Waiting...</span>}
+                  {f.status === 'uploading' && (
+                    <span className="text-blue-400 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Uploading...
+                    </span>
                   )}
                   {f.status === 'processing' && (
                     <span className="text-blue-400 flex items-center gap-1">
@@ -151,7 +204,20 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
                   {f.status === 'error' && (
                     <span className="text-red-400 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
-                      {f.result}
+                      <span className="max-w-[140px] truncate">{f.result}</span>
+                      {f.sourceId && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            retryProcess(f);
+                          }}
+                          className="ml-1 p-0.5 rounded hover:bg-neutral-700 transition-colors cursor-pointer"
+                          title="Retry processing"
+                          style={{ border: 'none', background: 'none' }}
+                        >
+                          <RotateCw className="w-3 h-3 text-neutral-400 hover:text-white" />
+                        </button>
+                      )}
                     </span>
                   )}
                 </span>
