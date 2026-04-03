@@ -8,8 +8,26 @@ import UploadPanel from '@/components/UploadPanel';
 import SyncPanel from '@/components/SyncPanel';
 import DocumentViewer from '@/components/DocumentViewer';
 import InstallPrompt from '@/components/InstallPrompt';
+import Login from '@/components/Login';
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // ─── Check Authentication on mount ───
+  useEffect(() => {
+    const authStatus = localStorage.getItem('vv_mock_auth');
+    if (authStatus === 'true') {
+      setIsAuthenticated(true);
+    }
+    setIsCheckingAuth(false);
+  }, []);
+
+  const handleLogin = () => {
+    localStorage.setItem('vv_mock_auth', 'true');
+    setIsAuthenticated(true);
+  };
+
   const [sources, setSources] = useState([]);
   const [showUpload, setShowUpload] = useState(false);
   const [showSync, setShowSync] = useState(false);
@@ -187,6 +205,22 @@ export default function Home() {
       // handle error silently
     }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-neutral-950">
+        <div style={{ display: 'flex', gap: '4px', padding: '4px 0' }}>
+          <div style={{ width: '8px', height: '8px', background: '#60a5fa', borderRadius: '50%', animation: 'typingBounce 1.2s infinite' }} />
+          <div style={{ width: '8px', height: '8px', background: '#60a5fa', borderRadius: '50%', animation: 'typingBounce 1.2s infinite 0.2s' }} />
+          <div style={{ width: '8px', height: '8px', background: '#60a5fa', borderRadius: '50%', animation: 'typingBounce 1.2s infinite 0.4s' }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   // Show loading while sessions load
   if (!sessionsLoaded) {

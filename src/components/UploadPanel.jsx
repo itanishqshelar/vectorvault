@@ -29,6 +29,12 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
         formData.append('file', fileEntry.file);
 
         const res = await fetch('/api/ingest', { method: 'POST', body: formData });
+        
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error(`Server error ${res.status}: Upload might have timed out`);
+        }
+
         const data = await res.json();
 
         if (!res.ok) throw new Error(data.error || 'Upload failed');

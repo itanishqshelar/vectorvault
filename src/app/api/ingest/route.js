@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+export const maxDuration = 60; // Allow more time for processing PDFs on Vercel
 import { parsePDF } from '@/lib/parsers/pdf';
 import { parseExcel } from '@/lib/parsers/excel';
 import { parseEmail } from '@/lib/parsers/email';
