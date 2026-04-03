@@ -5,10 +5,12 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import ChatInterface from '@/components/ChatInterface';
 import UploadPanel from '@/components/UploadPanel';
+import SyncPanel from '@/components/SyncPanel';
 
 export default function Home() {
   const [sources, setSources] = useState([]);
   const [showUpload, setShowUpload] = useState(false);
+  const [showSync, setShowSync] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const fetchSources = useCallback(async () => {
@@ -24,6 +26,14 @@ export default function Home() {
   useEffect(() => {
     fetchSources();
   }, [fetchSources]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('auth') === 'success') {
+      setShowSync(true);
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
 
   const handleDeleteSource = async (id) => {
     try {
@@ -48,6 +58,7 @@ export default function Home() {
       <div className="flex-1 flex flex-col min-w-0">
         <Header
           onUploadClick={() => setShowUpload(true)}
+          onSyncClick={() => setShowSync(true)}
           toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           isSidebarCollapsed={isSidebarCollapsed}
         />
@@ -57,6 +68,12 @@ export default function Home() {
         <UploadPanel
           onClose={() => setShowUpload(false)}
           onUploadComplete={fetchSources}
+        />
+      )}
+      {showSync && (
+        <SyncPanel
+          onClose={() => setShowSync(false)}
+          onSyncComplete={fetchSources}
         />
       )}
     </div>

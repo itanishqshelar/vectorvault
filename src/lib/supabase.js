@@ -40,15 +40,25 @@ export async function searchDocuments(queryEmbedding, threshold = 0.5, limit = 1
   return data;
 }
 
-export async function createSource({ filename, sourceType, fileSize, metadata = {} }) {
+export async function createSource({ filename, sourceType, fileSize, metadata = {}, externalId = null }) {
   const { data, error } = await getSupabase()
     .from('sources')
-    .insert({ filename, source_type: sourceType, file_size: fileSize, metadata })
+    .insert({ filename, source_type: sourceType, file_size: fileSize, metadata, external_id: externalId })
     .select()
     .single();
 
   if (error) throw error;
   return data;
+}
+
+export async function sourceExistsByExternalId(externalId) {
+  const { data, error } = await getSupabase()
+    .from('sources')
+    .select('id')
+    .eq('external_id', externalId)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
 }
 
 export async function getSources() {
@@ -65,6 +75,61 @@ export async function getSources() {
 }
 
 export async function deleteSource(id) {
+  // Also remove the stored file from storage if it exists
+  const { data: source } = await getSupabase()
+    .from('sources')
+    .select('storage_path')
+    .eq('id', id)
+    .single();
+
+  if (source?.storage_path) {
+    await getSupabase().storage.from('documents').remove([source.storage_path]);
+  }
+
   const { error } = await getSupabase().from('sources').delete().eq('id', id);
   if (error) throw error;
+}
+
+export async function uploadSourceFile(sourceId, filename, buffer, mimeType) {
+  const supabase = getSupabase();
+  const BUCKET = 'documents';
+
+  // Create bucket if it doesn't exist yet
+  const { error: bucketError } = await supabase.storage.createBucket(BUCKET, { public: false });
+  if (bucketError && !bucketError.message.toLowerCase().includes('already exists')) {
+    throw new Error(`Storage bucket error: ${bucketError.message}`);
+  }
+
+  const path = `${sourceId}/${filename}`;
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, buffer, { contentType: mimeType, upsert: true });
+  if (error) throw new Error(`Storage upload error: ${error.message}`);
+  return path;
+}
+
+export async function updateSourceStoragePath(sourceId, storagePath) {
+  const { error } = await getSupabase()
+    .from('sources')
+    .update({ storage_path: storagePath })
+    .eq('id', sourceId);
+  if (error) throw error;
+}
+
+export async function getSourceFileSignedUrl(sourceId) {
+  const { data: source, error: fetchError } = await getSupabase()
+    .from('sources')
+    .select('storage_path')
+    .eq('id', sourceId)
+    .single();
+
+  if (fetchError) throw fetchError;
+  if (!source?.storage_path) throw new Error('No file stored for this document');
+
+  const { data, error } = await getSupabase().storage
+    .from('documents')
+    .createSignedUrl(source.storage_path, 3600); // 1-hour expiry
+
+  if (error) throw error;
+  return data.signedUrl;
 }

@@ -5,11 +5,22 @@ create extension if not exists vector with schema extensions;
 create table sources (
   id uuid primary key default gen_random_uuid(),
   filename text not null,
-  source_type text not null check (source_type in ('pdf', 'excel', 'email')),
+  source_type text not null check (source_type in ('pdf', 'excel', 'email', 'gmail', 'drive')),
   file_size integer,
+  storage_path text,
+  external_id text unique,
   uploaded_at timestamptz default now(),
   metadata jsonb default '{}'
 );
+
+-- Storage bucket for original uploaded files
+-- Run in Supabase dashboard → Storage: create bucket named "documents" (not public)
+
+-- Migration for existing deployments:
+-- alter table sources add column if not exists storage_path text;
+-- alter table sources add column if not exists external_id text unique;
+-- alter table sources drop constraint if exists sources_source_type_check;
+-- alter table sources add constraint sources_source_type_check check (source_type in ('pdf', 'excel', 'email', 'gmail', 'drive'));
 
 -- Documents table: stores chunks with embeddings
 create table documents (

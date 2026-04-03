@@ -1,16 +1,35 @@
 'use client';
 
-import { FileText, Sheet, Mail, Trash2 } from 'lucide-react';
+import { FileText, Sheet, Mail, FolderOpen, Trash2, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
 const TYPE_ICONS = {
   pdf: { icon: FileText, cls: 'text-red-400 bg-red-400/10' },
   excel: { icon: Sheet, cls: 'text-green-400 bg-green-400/10' },
   email: { icon: Mail, cls: 'text-blue-400 bg-blue-400/10' },
+  gmail: { icon: Mail, cls: 'text-orange-400 bg-orange-400/10' },
+  drive: { icon: FolderOpen, cls: 'text-blue-400 bg-blue-400/10' },
 };
 
 export default function Sidebar({ sources, onDeleteSource, isCollapsed }) {
   const totalChunks = sources.reduce((sum, s) => sum + (s.chunk_count || 0), 0);
+  const [loadingView, setLoadingView] = useState(null);
+
+  async function handleView(sourceId) {
+    setLoadingView(sourceId);
+    try {
+      const res = await fetch(`/api/sources/${sourceId}/view`);
+      const data = await res.json();
+      if (data.url) {
+        window.open(data.url, '_blank', 'noopener,noreferrer');
+      } else {
+        alert(data.error || 'Could not load file');
+      }
+    } finally {
+      setLoadingView(null);
+    }
+  }
 
   return (
     <aside
@@ -84,13 +103,23 @@ export default function Sidebar({ sources, onDeleteSource, isCollapsed }) {
                     {new Date(source.uploaded_at).toLocaleDateString()}
                   </div>
                 </div>
-                <button
-                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-neutral-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
-                  onClick={() => onDeleteSource(source.id)}
-                  title="Delete source"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-all">
+                  <button
+                    className="p-1.5 rounded-md text-neutral-500 hover:text-indigo-400 hover:bg-indigo-400/10 transition-colors disabled:opacity-50"
+                    onClick={() => handleView(source.id)}
+                    disabled={loadingView === source.id}
+                    title="View document"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    className="p-1.5 rounded-md text-neutral-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                    onClick={() => onDeleteSource(source.id)}
+                    title="Delete source"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             );
           })

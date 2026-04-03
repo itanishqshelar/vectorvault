@@ -4,13 +4,20 @@ import { parseExcel } from '@/lib/parsers/excel';
 import { parseEmail } from '@/lib/parsers/email';
 import { chunkText } from '@/lib/chunker';
 import { generateEmbeddings } from '@/lib/gemini';
-import { createSource, insertDocuments } from '@/lib/supabase';
+import { createSource, insertDocuments, uploadSourceFile, updateSourceStoragePath } from '@/lib/supabase';
 
 const PARSERS = {
   pdf: parsePDF,
   xlsx: parseExcel,
   xls: parseExcel,
   eml: parseEmail,
+};
+
+const MIME_TYPES = {
+  pdf: 'application/pdf',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  xls: 'application/vnd.ms-excel',
+  eml: 'message/rfc822',
 };
 
 function getFileType(filename) {
@@ -78,6 +85,11 @@ export async function POST(request) {
 
     // Insert into Supabase
     await insertDocuments(source.id, chunksWithEmbeddings);
+
+    // Upload original file to Supabase Storage
+    const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+    const storagePath = await uploadSourceFile(source.id, filename, buffer, mimeType);
+    await updateSourceStoragePath(source.id, storagePath);
 
     return NextResponse.json({
       source_id: source.id,

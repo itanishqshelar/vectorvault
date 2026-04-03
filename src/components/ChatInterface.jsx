@@ -76,7 +76,7 @@ export default function ChatInterface() {
   const [loading, setLoading] = useState(false);
   const chatRef = useRef(null);
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
-    minHeight: 48,
+    minHeight: 56,
     maxHeight: 150,
   });
 
@@ -213,7 +213,7 @@ export default function ChatInterface() {
             <div className="ambient-glow" />
 
             {/* Title and subtitle */}
-            <div className="text-center mb-12 relative z-10">
+            <div className="text-center mb-16 relative z-10">
               <h1 className="text-5xl font-bold text-white font-[family-name:var(--font-display)] title-glow">
                 VectorVault AI
               </h1>
@@ -236,32 +236,32 @@ export default function ChatInterface() {
                   placeholder="Ask a question about your documents..."
                   className={cn(
                     'w-full px-5 py-4 resize-none border-none',
-                    'bg-transparent text-white text-sm',
+                    'bg-transparent text-white text-base',
                     'focus-visible:ring-0 focus-visible:ring-offset-0',
-                    'placeholder:text-neutral-500 min-h-[48px]'
+                    'placeholder:text-neutral-500 min-h-[56px] pt-5'
                   )}
                   style={{ overflow: 'hidden' }}
                   disabled={loading}
                 />
-                <div className="flex items-center justify-between px-4 pb-3">
+                <div className="flex items-center justify-between px-4 pb-3 mt-auto">
                   <Button
                     variant="ghost"
                     size="icon"
                     className="text-neutral-500 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors"
                   >
-                    <Paperclip className="w-4 h-4" />
+                    <Paperclip className="w-5 h-5" />
                   </Button>
                   <Button
                     onClick={handleSubmit}
                     disabled={!input.trim() || loading}
                     className={cn(
-                      'rounded-lg px-3 py-2 transition-all duration-200',
+                      'rounded-full w-10 h-10 p-0 flex items-center justify-center transition-all duration-200',
                       input.trim()
                         ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 hover:shadow-indigo-500/40'
                         : 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
                     )}
                   >
-                    <ArrowUpIcon className="w-4 h-4" />
+                    <ArrowUpIcon className="w-5 h-5" />
                     <span className="sr-only">Send</span>
                   </Button>
                 </div>
@@ -343,33 +343,33 @@ export default function ChatInterface() {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask a follow-up question..."
                 className={cn(
-                  'w-full px-4 py-3 resize-none border-none',
-                  'bg-transparent text-white text-sm',
+                  'w-full px-5 py-4 resize-none border-none',
+                  'bg-transparent text-white text-base',
                   'focus-visible:ring-0 focus-visible:ring-offset-0',
-                  'placeholder:text-neutral-500 min-h-[48px]'
+                  'placeholder:text-neutral-500 min-h-[56px] pt-5'
                 )}
                 style={{ overflow: 'hidden' }}
                 disabled={loading}
               />
-              <div className="flex items-center justify-between p-3">
+              <div className="flex items-center justify-between p-3 mt-auto">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="text-neutral-500 hover:text-white hover:bg-neutral-700"
                 >
-                  <Paperclip className="w-4 h-4" />
+                  <Paperclip className="w-5 h-5" />
                 </Button>
                 <Button
                   onClick={handleSubmit}
                   disabled={!input.trim() || loading}
                   className={cn(
-                    'rounded-lg px-3 py-2 transition-all',
+                    'rounded-full w-10 h-10 p-0 flex items-center justify-center transition-all',
                     input.trim()
                       ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5'
                       : 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
                   )}
                 >
-                  <ArrowUpIcon className="w-4 h-4" />
+                  <ArrowUpIcon className="w-5 h-5" />
                   <span className="sr-only">Send</span>
                 </Button>
               </div>
