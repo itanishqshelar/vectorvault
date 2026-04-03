@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import SourceCard from './SourceCard';
 import ConflictBanner from './ConflictBanner';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function MessageBubble({ message, onSourceClick }) {
   const [showReasoning, setShowReasoning] = useState(false);
@@ -75,12 +77,24 @@ export default function MessageBubble({ message, onSourceClick }) {
     overflowWrap: 'break-word',
   };
 
+  const markdownComponents = {
+    p: ({node, ...props}) => <p style={{ marginBottom: '0.75em', whiteSpace: 'pre-wrap' }} {...props} />,
+    ul: ({node, ...props}) => <ul style={{ listStyleType: 'disc', paddingLeft: '1.5em', marginBottom: '0.75em' }} {...props} />,
+    ol: ({node, ...props}) => <ol style={{ listStyleType: 'decimal', paddingLeft: '1.5em', marginBottom: '0.75em' }} {...props} />,
+    li: ({node, ...props}) => <li style={{ marginBottom: '0.25em' }} {...props} />,
+    strong: ({node, ...props}) => <strong style={{ fontWeight: 'bold' }} {...props} />,
+    em: ({node, ...props}) => <em style={{ fontStyle: 'italic' }} {...props} />,
+    a: ({node, ...props}) => <a style={{ color: '#60a5fa', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer" {...props} />
+  };
+
   if (!parsed) {
     return (
       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', maxWidth: '768px', animation: 'fadeIn 0.3s ease' }}>
         <div style={avatarStyle}>V</div>
-        <div style={{ ...bubbleStyle, color: '#e5e5e5', whiteSpace: 'pre-wrap' }}>
-          {message.content}
+        <div style={{ ...bubbleStyle, color: '#e5e5e5' }}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {message.content}
+          </ReactMarkdown>
         </div>
       </div>
     );
@@ -90,8 +104,10 @@ export default function MessageBubble({ message, onSourceClick }) {
     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', maxWidth: '768px', animation: 'fadeIn 0.3s ease' }}>
       <div style={avatarStyle}>V</div>
       <div style={bubbleStyle}>
-        <div style={{ color: '#e5e5e5', whiteSpace: 'pre-wrap' }}>
-          {parsed.answer}
+        <div style={{ color: '#e5e5e5' }}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {parsed.answer}
+          </ReactMarkdown>
         </div>
 
         {parsed.sources && parsed.sources.length > 0 && (

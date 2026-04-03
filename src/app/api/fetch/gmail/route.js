@@ -5,7 +5,7 @@ import { getOAuthClientWithTokens } from '@/lib/googleAuth';
 import { parseGmailMessage } from '@/lib/parsers/gmail';
 import { chunkText } from '@/lib/chunker';
 import { generateEmbeddings } from '@/lib/gemini';
-import { createSource, insertDocuments, sourceExistsByExternalId } from '@/lib/supabase';
+import { createSource, insertDocuments, sourceExistsByExternalId, uploadSourceFile, updateSourceStoragePath } from '@/lib/supabase';
 
 export async function POST(request) {
   const cookieStore = await cookies();
@@ -64,6 +64,10 @@ export async function POST(request) {
           metadata: parsed.metadata,
           externalId,
         });
+
+        const transcriptBuffer = Buffer.from(parsed.text, 'utf-8');
+        const storagePath = await uploadSourceFile(source.id, `${parsed.metadata.filename}.txt`, transcriptBuffer, 'text/plain');
+        await updateSourceStoragePath(source.id, storagePath);
 
         const chunks = chunkText(parsed.text, {
           source_type: 'gmail',

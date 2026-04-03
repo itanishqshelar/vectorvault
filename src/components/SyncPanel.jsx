@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { X, Mail, FolderOpen, MapPin, Loader2, CheckCircle, AlertCircle, Unplug } from 'lucide-react';
+import { X, Mail, FolderOpen, Loader2, CheckCircle, AlertCircle, Unplug } from 'lucide-react';
 
 export default function SyncPanel({ onClose, onSyncComplete, authError }) {
   const [connected, setConnected] = useState(false);
@@ -20,12 +20,6 @@ export default function SyncPanel({ onClose, onSyncComplete, authError }) {
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveResult, setDriveResult] = useState(null);
 
-  // Maps state
-  const [mapsQuery, setMapsQuery] = useState('');
-  const [mapsMax, setMapsMax] = useState(10);
-  const [mapsLoading, setMapsLoading] = useState(false);
-  const [mapsResult, setMapsResult] = useState(null);
-
   useEffect(() => {
     fetch('/api/auth/status')
       .then((r) => r.json())
@@ -39,7 +33,6 @@ export default function SyncPanel({ onClose, onSyncComplete, authError }) {
     setConnected(false);
     setGmailResult(null);
     setDriveResult(null);
-    setMapsResult(null);
   }
 
   async function handleGmailSync() {
@@ -79,27 +72,6 @@ export default function SyncPanel({ onClose, onSyncComplete, authError }) {
       setDriveResult({ ok: false, error: err.message });
     } finally {
       setDriveLoading(false);
-    }
-  }
-
-  async function handleMapsSync() {
-    if (!mapsQuery.trim()) return;
-    setMapsLoading(true);
-    setMapsResult(null);
-    try {
-      const res = await fetch('/api/fetch/maps', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: mapsQuery, maxResults: mapsMax }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Maps sync failed');
-      setMapsResult({ ok: true, synced: data.synced, skipped: data.skipped });
-      if (data.synced > 0) onSyncComplete();
-    } catch (err) {
-      setMapsResult({ ok: false, error: err.message });
-    } finally {
-      setMapsLoading(false);
     }
   }
 
@@ -170,7 +142,7 @@ export default function SyncPanel({ onClose, onSyncComplete, authError }) {
             <div>
               <p className="text-sm text-neutral-300 font-medium">Connect your Google account</p>
               <p className="text-xs text-neutral-500 mt-1">
-                Sync Gmail, Drive, and Maps into your knowledge base
+                Sync Gmail and Drive into your knowledge base
               </p>
             </div>
             <a
@@ -324,66 +296,6 @@ export default function SyncPanel({ onClose, onSyncComplete, authError }) {
               )}
             </div>
 
-            {/* Maps section */}
-            <div
-              className="bg-neutral-800/50 rounded-xl p-4 space-y-3"
-              style={{ border: '1px solid rgba(64,64,64,0.5)' }}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-md bg-green-400/10 flex items-center justify-center">
-                  <MapPin className="w-4 h-4 text-green-400" />
-                </div>
-                <span className="text-sm font-semibold text-white">Google Maps</span>
-              </div>
-              <input
-                type="text"
-                placeholder="e.g. coffee shops in Bandra, hospitals near Pune"
-                value={mapsQuery}
-                onChange={(e) => setMapsQuery(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-900 rounded-lg text-sm text-neutral-200 placeholder-neutral-600"
-                style={inputStyle}
-                onFocus={(e) => e.target.style.border = inputFocusStyle}
-                onBlur={(e) => e.target.style.border = inputStyle.border}
-                onKeyDown={(e) => e.key === 'Enter' && !mapsLoading && handleMapsSync()}
-              />
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <label className="text-xs text-neutral-500 whitespace-nowrap">Max places</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={mapsMax}
-                    onChange={(e) => setMapsMax(Number(e.target.value))}
-                    className="w-20 px-2 py-1.5 bg-neutral-900 rounded-lg text-sm text-neutral-200"
-                    style={inputStyle}
-                    onFocus={(e) => e.target.style.border = inputFocusStyle}
-                    onBlur={(e) => e.target.style.border = inputStyle.border}
-                  />
-                </div>
-                <button
-                  onClick={handleMapsSync}
-                  disabled={mapsLoading || !mapsQuery.trim()}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-green-500/20 hover:bg-green-500/30 text-green-300 transition-colors cursor-pointer disabled:opacity-50"
-                  style={{ border: '1px solid rgba(34,197,94,0.3)' }}
-                >
-                  {mapsLoading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Syncing...
-                    </>
-                  ) : (
-                    'Sync Maps'
-                  )}
-                </button>
-              </div>
-              <p className="text-[11px] text-neutral-600">
-                Imports place details, reviews, ratings, and hours into your knowledge base
-              </p>
-              {mapsResult && (
-                <SyncResult result={mapsResult} />
-              )}
-            </div>
           </div>
         )}
       </div>
