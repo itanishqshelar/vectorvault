@@ -7,6 +7,7 @@ import ChatInterface from '@/components/ChatInterface';
 import UploadPanel from '@/components/UploadPanel';
 import SyncPanel from '@/components/SyncPanel';
 import DocumentViewer from '@/components/DocumentViewer';
+import InstallPrompt from '@/components/InstallPrompt';
 
 export default function Home() {
   const [sources, setSources] = useState([]);
@@ -251,6 +252,7 @@ export default function Home() {
           authError={authError}
         />
       )}
+      <InstallPrompt />
     </div>
   );
 }
