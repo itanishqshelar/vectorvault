@@ -20,7 +20,6 @@ async function downloadFile(drive, file) {
   const { id, mimeType, name } = file;
 
   if (mimeType === 'application/vnd.google-apps.document') {
-    // Export Google Doc as plain text
     const res = await drive.files.export(
       { fileId: id, mimeType: 'text/plain' },
       { responseType: 'arraybuffer' }
@@ -30,7 +29,6 @@ async function downloadFile(drive, file) {
   }
 
   if (mimeType === 'application/vnd.google-apps.spreadsheet') {
-    // Export Google Sheet as Excel
     const res = await drive.files.export(
       {
         fileId: id,
@@ -43,7 +41,6 @@ async function downloadFile(drive, file) {
     return { buffer, text: parsed.text, metadata: parsed.metadata, sourceType: 'drive' };
   }
 
-  // Direct download for PDF and Excel
   const res = await drive.files.get(
     { fileId: id, alt: 'media' },
     { responseType: 'arraybuffer' }
@@ -55,7 +52,6 @@ async function downloadFile(drive, file) {
     return { buffer, text: parsed.text, metadata: parsed.metadata, sourceType: 'drive' };
   }
 
-  // Excel
   const parsed = parseExcel(buffer, name);
   return { buffer, text: parsed.text, metadata: parsed.metadata, sourceType: 'drive' };
 }
@@ -68,7 +64,7 @@ export async function POST(request) {
   }
 
   const tokens = JSON.parse(tokenCookie.value);
-  const auth = getOAuthClientWithTokens(tokens);
+  const { auth, getUpdatedTokens } = getOAuthClientWithTokens(tokens);
   const drive = google.drive({ version: 'v3', auth });
 
   const body = await request.json().catch(() => ({}));
@@ -145,12 +141,25 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       synced,
       skipped,
       total,
       ...(errors.length > 0 ? { errors } : {}),
     });
+
+    // Persist refreshed tokens if they were updated
+    const refreshed = getUpdatedTokens();
+    if (refreshed) {
+      response.cookies.set('google_tokens', JSON.stringify(refreshed), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
+
+    return response;
   } catch (err) {
     console.error('Drive fetch error:', err);
     return NextResponse.json({ error: err.message || 'Drive sync failed' }, { status: 500 });

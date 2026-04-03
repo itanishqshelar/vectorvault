@@ -26,7 +26,7 @@ export async function askWithContext(query, contextChunks, systemPrompt) {
   const contextText = contextChunks
     .map(
       (chunk, i) =>
-        `[Source ${i + 1}: ${chunk.metadata?.filename || 'Unknown'} | Type: ${chunk.metadata?.source_type || 'unknown'} | Date: ${chunk.metadata?.date || 'unknown'}]\n${chunk.content}`
+        `[Source ${i + 1}: ${chunk.metadata?.filename || 'Unknown'} | Type: ${chunk.metadata?.source_type || 'unknown'} | Date: ${chunk.metadata?.date || 'unknown'} | ID: ${chunk.metadata?.source_id || 'unknown'}]\n${chunk.content}`
     )
     .join('\n\n---\n\n');
 

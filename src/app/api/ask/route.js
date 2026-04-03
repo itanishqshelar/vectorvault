@@ -49,6 +49,7 @@ export async function POST(request) {
         filename: sourceMap[r.source_id]?.filename || 'Unknown',
         source_type: sourceMap[r.source_id]?.source_type || 'unknown',
         uploaded_at: sourceMap[r.source_id]?.uploaded_at,
+        source_id: r.source_id,
       },
     }));
 

@@ -15,7 +15,7 @@ export async function POST(request) {
   }
 
   const tokens = JSON.parse(tokenCookie.value);
-  const auth = getOAuthClientWithTokens(tokens);
+  const { auth, getUpdatedTokens } = getOAuthClientWithTokens(tokens);
   const gmail = google.gmail({ version: 'v1', auth });
 
   const body = await request.json().catch(() => ({}));
@@ -84,12 +84,25 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       synced,
       skipped,
       total,
       ...(errors.length > 0 ? { errors } : {}),
     });
+
+    // Persist refreshed tokens if they were updated
+    const refreshed = getUpdatedTokens();
+    if (refreshed) {
+      response.cookies.set('google_tokens', JSON.stringify(refreshed), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
+
+    return response;
   } catch (err) {
     console.error('Gmail fetch error:', err);
     return NextResponse.json({ error: err.message || 'Gmail sync failed' }, { status: 500 });

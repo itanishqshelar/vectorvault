@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { parsePDF } from '@/lib/parsers/pdf';
 import { parseExcel } from '@/lib/parsers/excel';
 import { parseEmail } from '@/lib/parsers/email';
+import { parseImage } from '@/lib/parsers/image';
 import { chunkText } from '@/lib/chunker';
 import { generateEmbeddings } from '@/lib/gemini';
 import { createSource, insertDocuments, uploadSourceFile, updateSourceStoragePath } from '@/lib/supabase';
@@ -11,6 +12,9 @@ const PARSERS = {
   xlsx: parseExcel,
   xls: parseExcel,
   eml: parseEmail,
+  png: parseImage,
+  jpg: parseImage,
+  jpeg: parseImage,
 };
 
 const MIME_TYPES = {
@@ -18,6 +22,9 @@ const MIME_TYPES = {
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   xls: 'application/vnd.ms-excel',
   eml: 'message/rfc822',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
 };
 
 function getFileType(filename) {
@@ -25,6 +32,7 @@ function getFileType(filename) {
   if (ext === 'pdf') return 'pdf';
   if (ext === 'xlsx' || ext === 'xls') return 'excel';
   if (ext === 'eml') return 'email';
+  if (ext === 'png' || ext === 'jpg' || ext === 'jpeg') return 'image';
   return null;
 }
 
@@ -43,7 +51,7 @@ export async function POST(request) {
 
     if (!sourceType) {
       return NextResponse.json(
-        { error: 'Unsupported file type. Supported: PDF, XLSX, XLS, EML' },
+        { error: 'Unsupported file type. Supported: PDF, XLSX, XLS, EML, PNG, JPG' },
         { status: 400 }
       );
     }

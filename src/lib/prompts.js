@@ -23,7 +23,7 @@ Respond in this JSON format:
 {
   "answer": "Your synthesized answer with inline source citations like [Source 1]",
   "sources": [
-    { "index": 1, "filename": "...", "type": "...", "section": "...", "relevance": "high|medium|low" }
+    { "index": 1, "id": "...", "filename": "...", "type": "...", "section": "...", "relevance": "high|medium|low", "snippet": "Exact quote from context used" }
   ],
   "conflict_detected": true/false,
   "conflict_details": "Description of the conflict and how it was resolved, or null if no conflict",

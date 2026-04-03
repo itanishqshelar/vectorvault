@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { X, Mail, FolderOpen, Loader2, CheckCircle, AlertCircle, Unplug } from 'lucide-react';
+import { X, Mail, FolderOpen, MapPin, Loader2, CheckCircle, AlertCircle, Unplug } from 'lucide-react';
 
-export default function SyncPanel({ onClose, onSyncComplete }) {
+export default function SyncPanel({ onClose, onSyncComplete, authError }) {
   const [connected, setConnected] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
 
@@ -20,6 +20,12 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveResult, setDriveResult] = useState(null);
 
+  // Maps state
+  const [mapsQuery, setMapsQuery] = useState('');
+  const [mapsMax, setMapsMax] = useState(10);
+  const [mapsLoading, setMapsLoading] = useState(false);
+  const [mapsResult, setMapsResult] = useState(null);
+
   useEffect(() => {
     fetch('/api/auth/status')
       .then((r) => r.json())
@@ -33,6 +39,7 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
     setConnected(false);
     setGmailResult(null);
     setDriveResult(null);
+    setMapsResult(null);
   }
 
   async function handleGmailSync() {
@@ -75,6 +82,27 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
     }
   }
 
+  async function handleMapsSync() {
+    if (!mapsQuery.trim()) return;
+    setMapsLoading(true);
+    setMapsResult(null);
+    try {
+      const res = await fetch('/api/fetch/maps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: mapsQuery, maxResults: mapsMax }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Maps sync failed');
+      setMapsResult({ ok: true, synced: data.synced, skipped: data.skipped });
+      if (data.synced > 0) onSyncComplete();
+    } catch (err) {
+      setMapsResult({ ok: false, error: err.message });
+    } finally {
+      setMapsLoading(false);
+    }
+  }
+
   const inputStyle = {
     border: '1px solid #404040',
     outline: 'none',
@@ -88,7 +116,7 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="bg-neutral-900 rounded-2xl p-8 w-[520px] max-w-[90vw] shadow-2xl shadow-black/50 animate-slide-up"
+        className="bg-neutral-900 rounded-2xl p-8 w-[520px] max-w-[90vw] max-h-[85vh] overflow-y-auto shadow-2xl shadow-black/50 animate-slide-up"
         style={{ border: '1px solid #262626' }}
       >
         {/* Header */}
@@ -105,6 +133,22 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
           </button>
         </div>
 
+        {/* Auth error banner */}
+        {authError && !connected && (
+          <div className="mt-3 mb-2 p-3 rounded-lg bg-red-500/10 text-xs text-red-400" style={{ border: '1px solid rgba(239,68,68,0.2)' }}>
+            <div className="flex items-center gap-1.5 font-medium mb-1">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              Google sign-in failed
+            </div>
+            <p className="text-red-400/80">
+              {authError === 'no_code' && 'No authorization code received. Please try again.'}
+              {authError === 'access_denied' && 'Access was denied. Please grant the required permissions.'}
+              {authError === 'redirect_uri_mismatch' && 'Redirect URI mismatch. Check that GOOGLE_REDIRECT_URI in .env.local matches the authorized redirect URI in Google Cloud Console.'}
+              {!['no_code', 'access_denied', 'redirect_uri_mismatch'].includes(authError) && `Error: ${authError}. Check the server console for details and verify your Google Cloud Console settings.`}
+            </p>
+          </div>
+        )}
+
         {checkingStatus ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 text-neutral-500 animate-spin" />
@@ -116,7 +160,6 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
               className="w-14 h-14 rounded-2xl bg-neutral-800 flex items-center justify-center"
               style={{ border: '1px solid #404040' }}
             >
-              {/* Google-colored G icon */}
               <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -127,7 +170,7 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
             <div>
               <p className="text-sm text-neutral-300 font-medium">Connect your Google account</p>
               <p className="text-xs text-neutral-500 mt-1">
-                Sync Gmail and Drive into your knowledge base
+                Sync Gmail, Drive, and Maps into your knowledge base
               </p>
             </div>
             <a
@@ -278,6 +321,67 @@ export default function SyncPanel({ onClose, onSyncComplete }) {
               </p>
               {driveResult && (
                 <SyncResult result={driveResult} />
+              )}
+            </div>
+
+            {/* Maps section */}
+            <div
+              className="bg-neutral-800/50 rounded-xl p-4 space-y-3"
+              style={{ border: '1px solid rgba(64,64,64,0.5)' }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-md bg-green-400/10 flex items-center justify-center">
+                  <MapPin className="w-4 h-4 text-green-400" />
+                </div>
+                <span className="text-sm font-semibold text-white">Google Maps</span>
+              </div>
+              <input
+                type="text"
+                placeholder="e.g. coffee shops in Bandra, hospitals near Pune"
+                value={mapsQuery}
+                onChange={(e) => setMapsQuery(e.target.value)}
+                className="w-full px-3 py-2 bg-neutral-900 rounded-lg text-sm text-neutral-200 placeholder-neutral-600"
+                style={inputStyle}
+                onFocus={(e) => e.target.style.border = inputFocusStyle}
+                onBlur={(e) => e.target.style.border = inputStyle.border}
+                onKeyDown={(e) => e.key === 'Enter' && !mapsLoading && handleMapsSync()}
+              />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-xs text-neutral-500 whitespace-nowrap">Max places</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={mapsMax}
+                    onChange={(e) => setMapsMax(Number(e.target.value))}
+                    className="w-20 px-2 py-1.5 bg-neutral-900 rounded-lg text-sm text-neutral-200"
+                    style={inputStyle}
+                    onFocus={(e) => e.target.style.border = inputFocusStyle}
+                    onBlur={(e) => e.target.style.border = inputStyle.border}
+                  />
+                </div>
+                <button
+                  onClick={handleMapsSync}
+                  disabled={mapsLoading || !mapsQuery.trim()}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-green-500/20 hover:bg-green-500/30 text-green-300 transition-colors cursor-pointer disabled:opacity-50"
+                  style={{ border: '1px solid rgba(34,197,94,0.3)' }}
+                >
+                  {mapsLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    'Sync Maps'
+                  )}
+                </button>
+              </div>
+              <p className="text-[11px] text-neutral-600">
+                Imports place details, reviews, ratings, and hours into your knowledge base
+              </p>
+              {mapsResult && (
+                <SyncResult result={mapsResult} />
               )}
             </div>
           </div>

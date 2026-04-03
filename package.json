@@ -10,6 +10,7 @@
   "dependencies": {
     "@google/genai": "^1.48.0",
     "@supabase/supabase-js": "^2.101.1",
+    "adm-zip": "^0.5.17",
     "autoprefixer": "^10.4.27",
     "clsx": "^2.1.1",
     "googleapis": "^144.0.0",
@@ -20,6 +21,7 @@
     "postcss": "^8.5.8",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "sarvamai": "^1.1.6",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^3.4.19",
     "xlsx": "^0.18.5"

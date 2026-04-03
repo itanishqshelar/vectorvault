@@ -28,14 +28,31 @@ export async function exchangeCodeForTokens(code) {
   return tokens;
 }
 
+/**
+ * Creates an OAuth client with tokens and tracks any token refreshes.
+ * Returns { auth, getUpdatedTokens } where getUpdatedTokens() returns
+ * the latest tokens if they were refreshed, or null if unchanged.
+ */
 export function getOAuthClientWithTokens(tokens) {
   const client = createOAuthClient();
   client.setCredentials(tokens);
+
+  let updatedTokens = null;
+
   client.on('tokens', (newTokens) => {
-    if (newTokens.refresh_token) {
-      tokens.refresh_token = newTokens.refresh_token;
+    updatedTokens = {
+      ...tokens,
+      ...newTokens,
+    };
+    // Preserve the original refresh_token if the new one is missing
+    if (!updatedTokens.refresh_token && tokens.refresh_token) {
+      updatedTokens.refresh_token = tokens.refresh_token;
     }
-    tokens.access_token = newTokens.access_token;
+    client.setCredentials(updatedTokens);
   });
-  return client;
+
+  return {
+    auth: client,
+    getUpdatedTokens: () => updatedTokens,
+  };
 }

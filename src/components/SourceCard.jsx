@@ -15,15 +15,18 @@ const RELEVANCE_COLORS = {
   low: 'bg-neutral-500',
 };
 
-export default function SourceCard({ source }) {
+export default function SourceCard({ source, onClick }) {
   const info = TYPE_INFO[source.type] || TYPE_INFO.pdf;
   const Icon = info.icon;
   const dotColor = RELEVANCE_COLORS[source.relevance] || RELEVANCE_COLORS.medium;
 
   return (
     <div
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-900/60 rounded-full text-[11px] font-medium text-neutral-400"
-      style={{ border: '1px solid rgba(64, 64, 64, 0.5)' }}
+      onClick={() => onClick && onClick(source)}
+      className={cn(
+        "inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-900/60 rounded-full text-[11px] font-medium text-neutral-400 border border-neutral-700/50",
+        onClick && "cursor-pointer hover:bg-neutral-800 hover:border-neutral-600 transition-colors"
+      )}
     >
       <span className={cn('w-1.5 h-1.5 rounded-full', dotColor)} />
       <Icon className="w-3 h-3" />

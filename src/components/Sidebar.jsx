@@ -3,6 +3,8 @@
 import { FileText, Sheet, Mail, FolderOpen, Trash2, Eye, Plus, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import Image from 'next/image';
+import LanguageSelector from './LanguageSelector';
 
 const TYPE_ICONS = {
   pdf: { icon: FileText, cls: 'text-red-400 bg-red-400/10' },
@@ -52,13 +54,18 @@ export default function Sidebar({
       <div className="p-5" style={{ borderBottom: '1px solid #262626' }}>
         <div className="flex items-center gap-3">
           <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+            className="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-              boxShadow: '0 10px 15px -3px rgba(37,99,235,0.25)',
+              boxShadow: '0 10px 15px -3px rgba(0,0,0,0.25)',
             }}
           >
-            V
+            <Image 
+              src="/vaultlogo.jpeg" 
+              alt="VectorVault Logo" 
+              width={36} 
+              height={36} 
+              className="object-cover"
+            />
           </div>
           <div>
             <div className="font-[family-name:var(--font-display)] text-lg font-bold text-white">
@@ -70,6 +77,9 @@ export default function Sidebar({
           </div>
         </div>
       </div>
+
+      {/* Language Switcher */}
+      <LanguageSelector />
 
       {/* Stats */}
       <div className="flex gap-3 p-4" style={{ borderBottom: '1px solid #262626' }}>

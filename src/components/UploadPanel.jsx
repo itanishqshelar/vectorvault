@@ -77,7 +77,7 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
           </button>
         </div>
         <p className="text-sm text-neutral-500 mb-5">
-          Supported formats: PDF, Excel (.xlsx), Email (.eml)
+          Supported formats: PDF, Excel (.xlsx), Email (.eml), Images (.png, .jpg)
         </p>
 
         {/* Drop zone */}
@@ -103,13 +103,13 @@ export default function UploadPanel({ onClose, onUploadComplete }) {
             Drop files here or click to browse
           </div>
           <div className="text-xs text-neutral-600 mt-1">
-            PDF, XLSX, XLS, EML up to 10MB
+            PDF, XLSX, XLS, EML, PNG, JPG up to 10MB
           </div>
           <input
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".pdf,.xlsx,.xls,.eml"
+            accept=".pdf,.xlsx,.xls,.eml,.png,.jpg,.jpeg"
             className="hidden"
             onChange={(e) => handleFiles(e.target.files)}
           />

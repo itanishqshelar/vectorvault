@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import ChatInterface from '@/components/ChatInterface';
 import UploadPanel from '@/components/UploadPanel';
 import SyncPanel from '@/components/SyncPanel';
+import DocumentViewer from '@/components/DocumentViewer';
 
 export default function Home() {
   const [sources, setSources] = useState([]);
@@ -13,6 +14,8 @@ export default function Home() {
   const [showSync, setShowSync] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [sessionsLoaded, setSessionsLoaded] = useState(false);
+  const [selectedSource, setSelectedSource] = useState(null);
+  const [authError, setAuthError] = useState(null);
 
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
@@ -158,7 +161,14 @@ export default function Home() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('auth') === 'success') {
+    const authStatus = params.get('auth');
+    if (authStatus === 'success') {
+      setShowSync(true);
+      setAuthError(null);
+      window.history.replaceState({}, '', '/');
+    } else if (authStatus === 'error') {
+      const reason = params.get('reason') || 'unknown';
+      setAuthError(decodeURIComponent(reason));
       setShowSync(true);
       window.history.replaceState({}, '', '/');
     }
@@ -209,13 +219,24 @@ export default function Home() {
           toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           isSidebarCollapsed={isSidebarCollapsed}
         />
-        {currentSession && (
-          <ChatInterface 
-            key={currentSession.id}
-            messages={currentSession.messages}
-            setMessages={handleSetMessages}
-          />
-        )}
+        <div className="flex-1 flex overflow-hidden min-h-0">
+          <div className="flex-1 flex flex-col min-w-0">
+            {currentSession && (
+              <ChatInterface 
+                key={currentSession.id}
+                messages={currentSession.messages}
+                setMessages={handleSetMessages}
+                onSourceClick={setSelectedSource}
+              />
+            )}
+          </div>
+          {selectedSource && (
+            <DocumentViewer 
+              source={selectedSource}
+              onClose={() => setSelectedSource(null)}
+            />
+          )}
+        </div>
       </div>
       {showUpload && (
         <UploadPanel
@@ -225,8 +246,9 @@ export default function Home() {
       )}
       {showSync && (
         <SyncPanel
-          onClose={() => setShowSync(false)}
+          onClose={() => { setShowSync(false); setAuthError(null); }}
           onSyncComplete={fetchSources}
+          authError={authError}
         />
       )}
     </div>

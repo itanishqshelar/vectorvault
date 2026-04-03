@@ -5,7 +5,7 @@ create extension if not exists vector with schema extensions;
 create table sources (
   id uuid primary key default gen_random_uuid(),
   filename text not null,
-  source_type text not null check (source_type in ('pdf', 'excel', 'email', 'gmail', 'drive')),
+  source_type text not null check (source_type in ('pdf', 'excel', 'email', 'gmail', 'drive', 'image')),
   file_size integer,
   storage_path text,
   external_id text unique,
@@ -20,7 +20,7 @@ create table sources (
 -- alter table sources add column if not exists storage_path text;
 -- alter table sources add column if not exists external_id text unique;
 -- alter table sources drop constraint if exists sources_source_type_check;
--- alter table sources add constraint sources_source_type_check check (source_type in ('pdf', 'excel', 'email', 'gmail', 'drive'));
+-- alter table sources add constraint sources_source_type_check check (source_type in ('pdf', 'excel', 'email', 'gmail', 'drive', 'image'));
 
 -- Documents table: stores chunks with embeddings
 create table documents (

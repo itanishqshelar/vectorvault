@@ -5,7 +5,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import SourceCard from './SourceCard';
 import ConflictBanner from './ConflictBanner';
 
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, onSourceClick }) {
   const [showReasoning, setShowReasoning] = useState(false);
 
   if (message.role === 'user') {
@@ -97,7 +97,7 @@ export default function MessageBubble({ message }) {
         {parsed.sources && parsed.sources.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
             {parsed.sources.map((src, i) => (
-              <SourceCard key={i} source={src} />
+              <SourceCard key={i} source={src} onClick={onSourceClick} />
             ))}
           </div>
         )}

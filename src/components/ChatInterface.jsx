@@ -84,7 +84,7 @@ function QuickAction({ icon, label, onClick }) {
   );
 }
 
-export default function ChatInterface({ messages = [], setMessages }) {
+export default function ChatInterface({ messages = [], setMessages, onSourceClick }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -404,7 +404,7 @@ export default function ChatInterface({ messages = [], setMessages }) {
         ) : (
           <>
             {messages.map((msg, i) => (
-              <MessageBubble key={i} message={msg} />
+              <MessageBubble key={i} message={msg} onSourceClick={onSourceClick} />
             ))}
             {loading && messages[messages.length - 1]?.role === 'user' && (
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', maxWidth: '768px', animation: 'fadeIn 0.3s ease' }}>

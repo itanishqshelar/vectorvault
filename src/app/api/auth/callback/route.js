@@ -4,9 +4,18 @@ import { exchangeCodeForTokens } from '@/lib/googleAuth';
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
+  const error = searchParams.get('error');
+
+  // Google returned an error (e.g. user denied access)
+  if (error) {
+    const reason = encodeURIComponent(error);
+    return NextResponse.redirect(new URL(`/?auth=error&reason=${reason}`, request.url));
+  }
 
   if (!code) {
-    return NextResponse.redirect(new URL('/?auth=error', request.url));
+    return NextResponse.redirect(
+      new URL('/?auth=error&reason=no_code', request.url)
+    );
   }
 
   try {
@@ -21,7 +30,11 @@ export async function GET(request) {
     });
     return response;
   } catch (err) {
-    console.error('OAuth callback error:', err?.message, err?.response?.data);
-    return NextResponse.redirect(new URL('/?auth=error', request.url));
+    console.error('OAuth callback error:', err);
+    const detail = err?.response?.data?.error || err?.message || 'token_exchange_failed';
+    const reason = encodeURIComponent(detail);
+    return NextResponse.redirect(
+      new URL(`/?auth=error&reason=${reason}`, request.url)
+    );
   }
 }
