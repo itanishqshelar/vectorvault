@@ -4,22 +4,27 @@ import { SYSTEM_PROMPT } from '@/lib/prompts';
 
 export async function POST(request) {
   try {
-    const { query } = await request.json();
+    const { query, attachments = [] } = await request.json();
 
-    if (!query || query.trim().length === 0) {
+    const actualQuery = query || (attachments.length > 0 ? "Please analyze the attached file(s)." : "");
+
+    if (!actualQuery || actualQuery.trim().length === 0) {
       return new Response(JSON.stringify({ error: 'No query provided' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Embed the query
-    const queryEmbedding = await generateEmbedding(query);
+    let results = [];
+    if (query?.trim()?.length > 0) {
+      // Embed the original query
+      const queryEmbedding = await generateEmbedding(query);
 
-    // Search for relevant chunks
-    const results = await searchDocuments(queryEmbedding, 0.3, 10);
+      // Search for relevant chunks
+      results = await searchDocuments(queryEmbedding, 0.3, 10);
+    }
 
-    if (!results || results.length === 0) {
+    if ((!results || results.length === 0) && attachments.length === 0) {
       return new Response(
         JSON.stringify({
           answer: "I couldn't find any relevant information in the uploaded documents to answer your question.",
@@ -54,7 +59,7 @@ export async function POST(request) {
     }));
 
     // Stream response from Gemini
-    const stream = await askWithContext(query, enrichedChunks, SYSTEM_PROMPT);
+    const stream = await askWithContext(actualQuery, enrichedChunks, SYSTEM_PROMPT, attachments);
 
     const encoder = new TextEncoder();
     const readable = new ReadableStream({

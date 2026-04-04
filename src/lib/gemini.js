@@ -33,7 +33,7 @@ export async function classifyComplaint(emailText) {
   return text === 'YES';
 }
 
-export async function askWithContext(query, contextChunks, systemPrompt) {
+export async function askWithContext(query, contextChunks, systemPrompt, attachments = []) {
   const contextText = contextChunks
     .map(
       (chunk, i) =>
@@ -41,11 +41,21 @@ export async function askWithContext(query, contextChunks, systemPrompt) {
     )
     .join('\n\n---\n\n');
 
-  const userMessage = `Context Documents:\n${contextText}\n\n---\n\nUser Question: ${query}`;
+  const userMessageText = `Context Documents:\n${contextText}\n\n---\n\nUser Question: ${query}`;
+
+  const contents = [
+    { text: userMessageText },
+    ...attachments.map((att) => ({
+      inlineData: {
+        data: att.base64,
+        mimeType: att.mimeType,
+      },
+    })),
+  ];
 
   const response = await ai.models.generateContentStream({
     model: 'gemini-2.5-flash',
-    contents: userMessage,
+    contents: contents,
     config: {
       systemInstruction: systemPrompt,
       temperature: 0.3,

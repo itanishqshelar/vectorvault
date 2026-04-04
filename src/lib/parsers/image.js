@@ -5,7 +5,7 @@ import AdmZip from 'adm-zip';
 import { SarvamAIClient } from 'sarvamai';
 
 export async function parseImage(buffer, filename) {
-  const apiKey = process.env.SARVAM_API_KEY;
+  const apiKey = process.env.SARVAM_API_KEY?.replace(/^["']|["']$/g, '').trim();
   if (!apiKey) {
     throw new Error("SARVAM_API_KEY environment variable is not defined");
   }

@@ -84,7 +84,9 @@ export default function MessageBubble({ message, onSourceClick }) {
     li: ({node, ...props}) => <li style={{ marginBottom: '0.25em' }} {...props} />,
     strong: ({node, ...props}) => <strong style={{ fontWeight: 'bold' }} {...props} />,
     em: ({node, ...props}) => <em style={{ fontStyle: 'italic' }} {...props} />,
-    a: ({node, ...props}) => <a style={{ color: '#60a5fa', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer" {...props} />
+    a: ({node, ...props}) => <a style={{ color: '#60a5fa', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer" {...props} />,
+    pre: ({node, ...props}) => <pre style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '12px', borderRadius: '8px', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: '100%', marginBottom: '0.75em' }} {...props} />,
+    code: ({node, inline, ...props}) => <code style={{ background: inline ? 'rgba(0, 0, 0, 0.2)' : 'transparent', padding: inline ? '2px 4px' : '0', borderRadius: '4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'monospace', fontSize: '0.9em' }} {...props} />
   };
 
   if (!parsed) {

@@ -35,7 +35,7 @@ Respond in this JSON format:
 - If the context doesn't contain enough information to answer, say so clearly.
 - Always cite which source(s) your answer comes from.
 - If you detect conflicting information, ALWAYS flag it and explain the resolution.
-- Keep answers concise but thorough.`;
+- Keep answers concise but thorough. If the synthesized answer is becoming too large or lengthy, logically truncate the response. Provide the most critical information first and summarize the rest, offering to elaborate if the user needs more details.`;
 
 export const CONFLICT_DETECTION_PROMPT = `Analyze the following document chunks for contradictions or conflicting information. Two pieces of information conflict when they make incompatible claims about the same topic (e.g., different prices for the same product, different policies for the same situation).
 

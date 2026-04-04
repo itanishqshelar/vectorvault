@@ -12,6 +12,7 @@ import {
   Mic,
   Square,
   Radio,
+  X,
 } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import LiveVoiceOrb from './LiveVoiceOrb';
@@ -90,6 +91,8 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [isLiveOpen, setIsLiveOpen] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const chatRef = useRef(null);
@@ -97,6 +100,49 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
     minHeight: 56,
     maxHeight: 150,
   });
+
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+    if (!files.length) return;
+    
+    const readPromises = files.map(file => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target.result.split(',')[1];
+        resolve({
+          name: file.name,
+          mimeType: file.type,
+          base64,
+          previewUrl: file.type.startsWith('image/') ? ev.target.result : null
+        });
+      };
+      reader.readAsDataURL(file);
+    }));
+
+    const newAtts = await Promise.all(readPromises);
+    setAttachments(prev => [...prev, ...newAtts]);
+    e.target.value = null;
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const renderAttachmentsPreview = () => {
+    if (attachments.length === 0) return null;
+    return (
+      <div style={{ display: 'flex', gap: '8px', padding: '12px 16px 0', flexWrap: 'wrap' }}>
+        {attachments.map((att, i) => (
+          <div key={i} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', background: '#262626', border: '1px solid #404040', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {att.previewUrl ? <img src={att.previewUrl} alt={att.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <FileText style={{ color: '#a3a3a3' }} />}
+            <button onClick={() => removeAttachment(i)} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', borderRadius: '50%', color: 'white', padding: '2px', border: 'none', cursor: 'pointer' }}>
+              <X style={{ width: '12px', height: '12px' }} />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const handleLiveSessionEnd = useCallback((liveMessages) => {
     setMessages((prev) => [...prev, ...liveMessages]);
@@ -151,18 +197,20 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
   const handleSubmit = async (e) => {
     e?.preventDefault();
     const query = input.trim();
-    if (!query || loading) return;
+    if ((!query && attachments.length === 0) || loading) return;
 
+    const currentAttachments = [...attachments];
     setInput('');
+    setAttachments([]);
     adjustHeight(true);
-    setMessages((prev) => [...prev, { role: 'user', content: query }]);
+    setMessages((prev) => [...prev, { role: 'user', content: query || (currentAttachments.length > 0 ? `Uploaded ${currentAttachments.length} attachment(s)` : '') }]);
     setLoading(true);
 
     try {
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, attachments: currentAttachments.map(a => ({ base64: a.base64, mimeType: a.mimeType, name: a.name })) }),
       });
 
       if (!res.ok) {
@@ -248,6 +296,7 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
 
   return (
     <>
+      <input type="file" ref={fileInputRef} onChange={handleFileSelect} multiple accept="image/*,application/pdf" style={{ display: 'none' }} />
       {/* Chat area */}
       <div
         ref={chatRef}
@@ -287,6 +336,7 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
             {/* Input box - glassmorphic */}
             <div className="w-full max-w-3xl relative z-10">
               <div className="relative glass-input rounded-2xl">
+                {renderAttachmentsPreview()}
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -306,7 +356,7 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
                   }}
                 />
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 12px' }}>
-                  <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#737373', padding: '8px', borderRadius: '6px', display: 'flex' }}>
+                  <button onClick={() => fileInputRef.current?.click()} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#737373', padding: '8px', borderRadius: '6px', display: 'flex' }}>
                     <Paperclip style={{ width: '20px', height: '20px' }} />
                   </button>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -347,14 +397,14 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
                     </button>
                     <button
                       onClick={handleSubmit}
-                      disabled={!input.trim() || loading}
+                      disabled={(!input.trim() && attachments.length === 0) || loading}
                       style={{
                         width: '40px', height: '40px', borderRadius: '50%', border: 'none', padding: 0,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', flexShrink: 0,
-                        background: input.trim() ? 'linear-gradient(to right, #2563eb, #3b82f6)' : '#262626',
-                        color: input.trim() ? 'white' : '#737373',
-                        boxShadow: input.trim() ? '0 10px 15px -3px rgba(37,99,235,0.3)' : 'none',
+                        cursor: (input.trim() || attachments.length > 0) && !loading ? 'pointer' : 'not-allowed', flexShrink: 0,
+                        background: (input.trim() || attachments.length > 0) ? 'linear-gradient(to right, #2563eb, #3b82f6)' : '#262626',
+                        color: (input.trim() || attachments.length > 0) ? 'white' : '#737373',
+                        boxShadow: (input.trim() || attachments.length > 0) ? '0 10px 15px -3px rgba(37,99,235,0.3)' : 'none',
                       }}
                     >
                       <ArrowUpIcon style={{ width: '20px', height: '20px' }} />
@@ -432,6 +482,7 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
               className="relative bg-black/60 backdrop-blur-md rounded-xl"
               style={{ border: '1px solid #404040' }}
             >
+              {renderAttachmentsPreview()}
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -451,7 +502,7 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
                 }}
               />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px' }}>
-                <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#737373', padding: '8px', borderRadius: '6px', display: 'flex' }}>
+                <button onClick={() => fileInputRef.current?.click()} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#737373', padding: '8px', borderRadius: '6px', display: 'flex' }}>
                   <Paperclip style={{ width: '20px', height: '20px' }} />
                 </button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -492,14 +543,14 @@ export default function ChatInterface({ messages = [], setMessages, onSourceClic
                   </button>
                   <button
                     onClick={handleSubmit}
-                    disabled={!input.trim() || loading}
+                    disabled={(!input.trim() && attachments.length === 0) || loading}
                     style={{
                       width: '40px', height: '40px', borderRadius: '50%', border: 'none', padding: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', flexShrink: 0,
-                      background: input.trim() ? 'linear-gradient(to right, #2563eb, #3b82f6)' : '#404040',
-                      color: input.trim() ? 'white' : '#a3a3a3',
-                      boxShadow: input.trim() ? '0 10px 15px -3px rgba(37,99,235,0.25)' : 'none',
+                      cursor: (input.trim() || attachments.length > 0) && !loading ? 'pointer' : 'not-allowed', flexShrink: 0,
+                      background: (input.trim() || attachments.length > 0) ? 'linear-gradient(to right, #2563eb, #3b82f6)' : '#404040',
+                      color: (input.trim() || attachments.length > 0) ? 'white' : '#a3a3a3',
+                      boxShadow: (input.trim() || attachments.length > 0) ? '0 10px 15px -3px rgba(37,99,235,0.25)' : 'none',
                     }}
                   >
                     <ArrowUpIcon style={{ width: '20px', height: '20px' }} />
