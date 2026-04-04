@@ -81,11 +81,6 @@ export default function Login({ onLogin }) {
           </button>
         </form>
 
-        <div className="mt-8 text-center opacity-80">
-          <p className="text-xs text-neutral-500 font-body">
-             Secure internal mock access
-          </p>
-        </div>
       </div>
     </div>
   );
