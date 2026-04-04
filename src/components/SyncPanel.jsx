@@ -46,8 +46,8 @@ export default function SyncPanel({ onClose, onSyncComplete, authError }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gmail sync failed');
-      setGmailResult({ ok: true, synced: data.synced, skipped: data.skipped });
-      if (data.synced > 0) onSyncComplete();
+      setGmailResult({ ok: true, synced: data.synced, skipped: data.skipped, errors: data.errors });
+      if (data.synced > 0 || (data.errors && data.errors.length > 0)) onSyncComplete();
     } catch (err) {
       setGmailResult({ ok: false, error: err.message });
     } finally {
@@ -313,9 +313,19 @@ function SyncResult({ result }) {
     );
   }
   return (
-    <div className="flex items-center gap-1.5 text-xs text-green-400">
-      <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-      {result.synced} imported &middot; {result.skipped} skipped
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5 text-xs text-green-400">
+        <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+        {result.synced} imported &middot; {result.skipped} skipped
+        {result.errors?.length > 0 && (
+          <span className="text-yellow-400 ml-1">&middot; {result.errors.length} failed</span>
+        )}
+      </div>
+      {result.errors?.length > 0 && (
+        <div className="text-[11px] text-yellow-500/80 pl-5">
+          {result.errors[0].error}
+        </div>
+      )}
     </div>
   );
 }

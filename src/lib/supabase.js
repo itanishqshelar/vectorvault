@@ -66,6 +66,19 @@ export async function sourceExistsByExternalId(externalId) {
   return !!data;
 }
 
+// Returns { id, chunkCount } if source exists, or null. Used to detect
+// sources that were created but failed to embed (chunkCount === 0).
+export async function getSourceByExternalId(externalId) {
+  const { data, error } = await getSupabase()
+    .from('sources')
+    .select('id, documents(count)')
+    .eq('external_id', externalId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { id: data.id, chunkCount: data.documents?.[0]?.count ?? 0 };
+}
+
 export async function getSources() {
   const { data, error } = await getSupabase()
     .from('sources')
@@ -146,4 +159,38 @@ export async function getSourceFileSignedUrl(sourceId) {
 
   if (error) throw error;
   return data.signedUrl;
+}
+
+export async function createTicket({ source_id, title, description, customer_email, subject, metadata = {} }) {
+  const { data, error } = await getSupabase()
+    .from('service_tickets')
+    .insert({ source_id, title, description, customer_email, subject, metadata })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function listTickets(status) {
+  let query = getSupabase()
+    .from('service_tickets')
+    .select('*, sources(id, filename, source_type)')
+    .order('created_at', { ascending: false });
+  if (status) query = query.eq('status', status);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTicketStatus(id, status) {
+  const update = { status };
+  if (status === 'RESOLVED') update.resolved_at = new Date().toISOString();
+  const { data, error } = await getSupabase()
+    .from('service_tickets')
+    .update(update)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }

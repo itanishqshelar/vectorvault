@@ -22,6 +22,17 @@ export async function generateEmbeddings(texts) {
   return results;
 }
 
+export async function classifyComplaint(emailText) {
+  const prompt = `You are a customer support classifier. Is the following email a customer complaint or grievance? Reply with ONLY "YES" or "NO".\n\nEmail:\n${emailText.slice(0, 2000)}`;
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: { temperature: 0 },
+  });
+  const text = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toUpperCase() ?? 'NO';
+  return text === 'YES';
+}
+
 export async function askWithContext(query, contextChunks, systemPrompt) {
   const contextText = contextChunks
     .map(

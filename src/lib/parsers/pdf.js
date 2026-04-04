@@ -1,26 +1,27 @@
-import pdf from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 
 export async function parsePDF(buffer, filename) {
+  const parser = new PDFParse({ data: Buffer.from(buffer) });
   try {
-    const dataBuffer = Buffer.from(buffer);
-    const data = await pdf(dataBuffer);
+    const textResult = await parser.getText();
+    const infoResult = await parser.getInfo();
 
-    let title = filename;
-    if (data.info && data.info.Title) {
-      title = data.info.Title;
-    }
+    const title = infoResult.info?.Title || filename;
+    const pages = infoResult.total;
 
     return {
-      text: data.text.trim(),
+      text: textResult.text.trim(),
       metadata: {
         source_type: 'pdf',
         filename,
-        pages: data.numpages,
+        pages,
         title,
       },
     };
   } catch (error) {
-    console.error('Error parsing PDF with pdf-parse:', error);
-    throw new Error('Failed to parse PDF document.');
+    console.error('Error parsing PDF:', error);
+    throw new Error(`Failed to parse PDF document: ${error.message}`);
+  } finally {
+    await parser.destroy().catch(() => {});
   }
 }

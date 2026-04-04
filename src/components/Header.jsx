@@ -1,9 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { PanelLeftClose, PanelLeft, Upload, RefreshCw } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, Upload, RefreshCw, Ticket } from 'lucide-react';
 
 export default function Header({ onUploadClick, onSyncClick, toggleSidebar, isSidebarCollapsed }) {
+  const router = useRouter();
   return (
     <header
       className="flex items-center justify-between px-6 py-3.5 bg-neutral-900/60 backdrop-blur-xl"
@@ -35,6 +37,14 @@ export default function Header({ onUploadClick, onSyncClick, toggleSidebar, isSi
         >
           <RefreshCw className="w-4 h-4 shrink-0" />
           <span>Sync Google</span>
+        </button>
+        <button
+          onClick={() => router.push('/crm')}
+          className="inline-flex items-center gap-2 shrink-0 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+          style={{ border: '1px solid #404040' }}
+        >
+          <Ticket className="w-4 h-4 shrink-0" />
+          <span>Grievances</span>
         </button>
         <button
           onClick={onUploadClick}

@@ -4,8 +4,8 @@ import { google } from 'googleapis';
 import { getOAuthClientWithTokens } from '@/lib/googleAuth';
 import { parseGmailMessage } from '@/lib/parsers/gmail';
 import { chunkText } from '@/lib/chunker';
-import { generateEmbeddings } from '@/lib/gemini';
-import { createSource, insertDocuments, sourceExistsByExternalId, uploadSourceFile, updateSourceStoragePath } from '@/lib/supabase';
+import { generateEmbeddings, classifyComplaint } from '@/lib/gemini';
+import { createSource, insertDocuments, getSourceByExternalId, deleteSource, uploadSourceFile, updateSourceStoragePath, createTicket } from '@/lib/supabase';
 
 export async function POST(request) {
   const cookieStore = await cookies();
@@ -39,10 +39,17 @@ export async function POST(request) {
     for (const { id } of messages) {
       const externalId = `gmail:${id}`;
       try {
-        const exists = await sourceExistsByExternalId(externalId);
-        if (exists) {
-          skipped++;
-          continue;
+        // Check if this email already exists AND has successfully embedded chunks.
+        // If it exists with 0 chunks it means a previous sync failed mid-way —
+        // delete the broken record so we can re-process cleanly.
+        const existing = await getSourceByExternalId(externalId);
+        if (existing) {
+          if (existing.chunkCount > 0) {
+            skipped++;
+            continue;
+          }
+          // Broken source (0 chunks) — delete and reprocess
+          await deleteSource(existing.id);
         }
 
         const msgRes = await gmail.users.messages.get({
@@ -68,6 +75,26 @@ export async function POST(request) {
         const transcriptBuffer = Buffer.from(parsed.text, 'utf-8');
         const storagePath = await uploadSourceFile(source.id, `${parsed.metadata.filename}.txt`, transcriptBuffer, 'text/plain');
         await updateSourceStoragePath(source.id, storagePath);
+
+        // Auto-detect complaints and create service tickets BEFORE embedding,
+        // so a ticket is always recorded even if embedding fails later.
+        try {
+          const isComplaint = await classifyComplaint(parsed.text);
+          if (isComplaint) {
+            const senderMatch = parsed.metadata.sender?.match(/<(.+?)>/) || [];
+            const customerEmail = senderMatch[1] || parsed.metadata.sender || null;
+            await createTicket({
+              source_id: source.id,
+              title: parsed.metadata.subject || '(no subject)',
+              description: parsed.text.slice(0, 200),
+              customer_email: customerEmail,
+              subject: parsed.metadata.subject || null,
+              metadata: { auto_detected: true, synced_at: new Date().toISOString() },
+            });
+          }
+        } catch (ticketErr) {
+          console.warn('Ticket classification error for', externalId, ticketErr.message);
+        }
 
         const chunks = chunkText(parsed.text, {
           source_type: 'gmail',
