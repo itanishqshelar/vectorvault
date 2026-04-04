@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { X, Mail, FolderOpen, Loader2, CheckCircle, AlertCircle, Unplug } from 'lucide-react';
+import { X, Mail, FolderOpen, Loader2, CheckCircle, AlertCircle, Unplug, FolderSearch } from 'lucide-react';
+import DriveFilePicker from './DriveFilePicker';
 
 export default function SyncPanel({ onClose, onSyncComplete, authError }) {
   const [connected, setConnected] = useState(false);
@@ -19,6 +20,7 @@ export default function SyncPanel({ onClose, onSyncComplete, authError }) {
   const [driveMax, setDriveMax] = useState(20);
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveResult, setDriveResult] = useState(null);
+  const [showFilePicker, setShowFilePicker] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/status')
@@ -273,6 +275,15 @@ export default function SyncPanel({ onClose, onSyncComplete, authError }) {
                   />
                 </div>
                 <button
+                  onClick={() => setShowFilePicker(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors cursor-pointer"
+                  style={{ border: '1px solid #404040', background: 'none' }}
+                  title="Browse and pick files manually"
+                >
+                  <FolderSearch className="w-3.5 h-3.5" />
+                  Browse
+                </button>
+                <button
                   onClick={handleDriveSync}
                   disabled={driveLoading}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 transition-colors cursor-pointer disabled:opacity-50"
@@ -299,6 +310,17 @@ export default function SyncPanel({ onClose, onSyncComplete, authError }) {
           </div>
         )}
       </div>
+
+      {showFilePicker && (
+        <DriveFilePicker
+          folderId={driveFolderId || null}
+          onClose={() => setShowFilePicker(false)}
+          onUpload={() => {
+            onSyncComplete();
+            setDriveResult(null);
+          }}
+        />
+      )}
     </div>
   );
 }
