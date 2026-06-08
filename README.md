@@ -8,6 +8,8 @@ VectorVault is a Retrieval-Augmented Generation (RAG) web application built with
 - **Vector Search:** Utilizes Supabase (with `pgvector`) for storing embeddings and performing fast similarity searches.
 - **AI Chat:** Interactive chat interface powered by Google Gemini.
 - **Source Tracking & Conflict Resolution:** Keeps track of source documents and flags potential conflicts in the retrieved context.
+- **AI Voice Mode:** Interact with your documents hands-free using voice input and text-to-speech responses, powered by the Web Speech API.
+- **Inline Source Highlighting:** Retrieved context is traced back to its exact lines in the source document, with those passages highlighted directly in the reference panel for precise verification.
 
 ## Tech Stack
 
