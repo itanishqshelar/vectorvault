@@ -16,6 +16,10 @@ VectorVault is a Retrieval-Augmented Generation (RAG) web application built with
 - **Database & Vector Store:** Supabase (PostgreSQL + pgvector)
 - **AI Model:** Google Gemini API
 
+## Screenshots
+<img width="1919" height="972" alt="image" src="https://github.com/user-attachments/assets/08f3a9a3-25b8-4547-b7fb-334f170d1fc0" />
+
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
